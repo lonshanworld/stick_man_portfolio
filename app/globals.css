@@ -1,26 +1,467 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+body.spell-preview-mode {
+  background: radial-gradient(circle at center, #15182b 0%, #070811 58%, #020207 100%);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+body.spell-preview-mode main > * {
+  visibility: hidden !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body.spell-preview-mode main > .spell-world-canvas {
+  visibility: visible !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spell-world-canvas,
+  .spell-world-canvas + * {
+    scroll-behavior: auto;
+  }
+
+  [class*='animate-ping'],
+  [class*='animate-pulse'] {
+    animation-duration: 2.4s !important;
+    animation-iteration-count: 1 !important;
   }
 }
 
+:root {
+  --theme-bg: radial-gradient(ellipse at 60% 20%, #3a0a00 0%, #1a0500 50%, #060204 100%);
+  --theme-primary: #FF3000;
+  --theme-secondary: #FF6600;
+  --theme-accent: #FF9900;
+  --theme-text: #FFF0E0;
+  --theme-subtext: #FFB899;
+  --theme-card-bg: rgba(36, 10, 4, 0.75);
+  --theme-card-border: rgba(255, 80, 0, 0.28);
+  --theme-glow: rgba(255, 60, 0, 0.4);
+
+  --color-primary: #FF3000;
+  --color-secondary: #FF6600;
+  --color-glow: rgba(255, 60, 0, 0.4);
+  --color-shadow: rgba(255, 60, 0, 0.4);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+  color-scheme: dark;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--theme-bg);
+  background-attachment: fixed;
+  color: var(--theme-text);
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  transition: background 0.8s ease, color 0.5s ease;
+}
+
+/* Custom Sleek Minimal Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-primary);
+  border-radius: 9999px;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Glassmorphic card styling */
+.glass-card {
+  background: var(--theme-card-bg);
+  border: 1px solid var(--theme-card-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: var(--theme-primary);
+  box-shadow: 0 8px 32px var(--theme-glow);
+}
+
+/* Rally Beacon Ripple (Clicking anywhere on ground) */
+@keyframes rallyPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.4);
+    opacity: 0;
+  }
+}
+
+.rally-beacon-ripple {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--theme-primary);
+  animation: rallyPulse 0.9s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+  pointer-events: none;
+  z-index: 40;
+}
+
+/* Turn-based character conversation --------------------------------------- */
+@keyframes dialogueThreadIn {
+  from { opacity: 0; transform: translate(-50%, calc(-100% + 8px)) scale(.96); }
+  to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+}
+
+.dialogue-thread {
+  position: absolute;
+  z-index: 70;
+  width: min(340px, calc(100vw - 24px));
+  transform: translate(-50%, -100%);
+  padding: 11px 12px 10px;
+  overflow: visible;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(13,19,38,.97), rgba(4,8,19,.97));
+  box-shadow: 0 15px 42px rgba(0,0,0,.62), inset 0 1px rgba(255,255,255,.08);
+  color: white;
+  pointer-events: auto;
+  animation: dialogueThreadIn .22s ease-out;
+}
+
+.dialogue-thread-header,
+.dialogue-thread-participants,
+.dialogue-thread-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dialogue-thread-header {
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.6);
+  font: 800 9px ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.dialogue-thread-header span:last-child {
+  color: #b9f6da;
+}
+
+.dialogue-thread-participants {
+  justify-content: center;
+  padding: 8px 0 7px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.dialogue-thread-messages {
+  display: grid;
+  gap: 6px;
+  max-height: 142px;
+  overflow: auto;
+  padding: 1px 1px 2px;
+}
+
+.dialogue-message {
+  display: grid;
+  gap: 2px;
+  max-width: 88%;
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, var(--message-color) 42%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--message-color) 10%, rgba(255,255,255,.045));
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.dialogue-message.is-first { justify-self: start; border-top-left-radius: 4px; }
+.dialogue-message.is-second { justify-self: end; border-top-right-radius: 4px; }
+.dialogue-message strong { color: var(--message-color); font-size: 9px; letter-spacing: .03em; }
+.dialogue-message span { color: rgba(255,255,255,.9); }
+.dialogue-thread-loading { margin: 0; color: rgba(255,255,255,.58); font-size: 10px; text-align: center; }
+
+.dialogue-thread-footer {
+  justify-content: center;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  color: rgba(255,255,255,.58);
+  font: 9px ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.dialogue-thread-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7ff0bd;
+  box-shadow: 0 0 10px #7ff0bd;
+}
+
+.dialogue-thread-tail {
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 13px;
+  height: 13px;
+  transform: translateX(-50%) rotate(45deg);
+  border-right: 1px solid rgba(255,255,255,.2);
+  border-bottom: 1px solid rgba(255,255,255,.2);
+  background: #071023;
+}
+
+/* Player-vs-AI arena ------------------------------------------------------- */
+@keyframes fightCountdownDrain {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@keyframes fightModalIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.fight-opponent-prompt {
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  width: 174px;
+  padding: 8px 10px 7px;
+  transform: translateX(-50%);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 72%, white);
+  border-radius: 12px;
+  background: rgba(5, 9, 20, 0.94);
+  box-shadow: 0 8px 24px var(--theme-glow);
+  color: white;
+  text-align: center;
+  pointer-events: none;
+  z-index: 65;
+}
+
+.fight-opponent-prompt strong,
+.fight-opponent-prompt span { display: block; }
+.fight-opponent-prompt strong { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.fight-opponent-prompt span { margin-top: 2px; color: rgba(255,255,255,.62); font-size: 8px; }
+.fight-opponent-prompt i {
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  transform-origin: left;
+  background: var(--theme-primary);
+  animation: fightCountdownDrain 5s linear forwards;
+}
+
+.fight-modal-backdrop,
+.fight-result-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2, 5, 13, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.fight-confirmation-panel {
+  position: relative;
+  width: min(880px, 96vw);
+  max-height: min(820px, 92vh);
+  overflow: auto;
+  padding: 28px;
+  border: 1px solid rgba(255,255,255,.17);
+  border-radius: 26px;
+  outline: none;
+  background: linear-gradient(145deg, rgba(20,27,48,.98), rgba(5,9,21,.98));
+  box-shadow: 0 28px 90px rgba(0,0,0,.68), inset 0 1px rgba(255,255,255,.07);
+  color: white;
+  text-align: center;
+  animation: fightModalIn .28s ease-out;
+}
+
+.fight-modal-close,
+.fight-pause-button {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 50%;
+  background: rgba(5,8,18,.72);
+  color: white;
+  cursor: pointer;
+}
+
+.fight-modal-close { position: absolute; top: 16px; right: 16px; width: 38px; height: 38px; }
+.fight-kicker { display: flex; justify-content: center; align-items: center; gap: 7px; color: #f2c45b; font-size: 11px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.fight-confirmation-panel h2 { margin: 8px 0 4px; font-size: clamp(26px, 5vw, 48px); line-height: 1; letter-spacing: -.04em; }
+.fight-confirmation-panel h2 span { display: inline-block; margin: 0 10px; color: #f2c45b; font-size: .55em; font-style: italic; }
+.fight-modal-copy { margin: 10px auto 22px; max-width: 560px; color: rgba(255,255,255,.62); font-size: 13px; }
+.fight-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fight-picker-card {
+  --fighter-color: #fff;
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  padding: 17px;
+  border: 1px solid color-mix(in srgb, var(--fighter-color) 42%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--fighter-color) 8%, rgba(10,14,27,.95));
+  color: white;
+  cursor: pointer;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.fight-picker-card:hover { transform: translateY(-3px); border-color: var(--fighter-color); }
+.fight-picker-card.is-selected { border-color: var(--fighter-color); box-shadow: 0 0 0 2px color-mix(in srgb, var(--fighter-color) 28%, transparent), 0 12px 36px color-mix(in srgb, var(--fighter-color) 22%, transparent); }
+.fight-card-side { color: var(--fighter-color); font-size: 9px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.fight-card-symbol { margin: 4px 0; font-size: 34px; filter: drop-shadow(0 0 12px var(--fighter-color)); }
+.fight-picker-card strong { font-size: 20px; }
+.fight-card-title { min-height: 32px; color: rgba(255,255,255,.58); font-size: 11px; }
+.fight-card-stats { display: grid; width: 100%; grid-template-columns: 1fr 1fr; gap: 5px; margin: 10px 0; }
+.fight-card-stats span { padding: 4px; border-radius: 6px; background: rgba(255,255,255,.06); font: 9px ui-monospace, monospace; }
+.fight-card-spells { display: flex; width: 100%; flex-direction: column; gap: 4px; text-align: left; }
+.fight-card-spells > span { display: flex; align-items: center; gap: 5px; overflow: hidden; color: rgba(255,255,255,.74); font-size: 10px; white-space: nowrap; text-overflow: ellipsis; }
+.fight-play-label { margin-top: 13px; padding: 6px 10px; border-radius: 999px; background: var(--fighter-color); color: #071019; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+.fight-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.fight-primary-button,
+.fight-secondary-button,
+.fight-text-button {
+  display: inline-flex;
+  min-height: 43px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.fight-primary-button { border: 1px solid #f4d477; background: linear-gradient(135deg, #f5d263, #e99027); color: #171006; box-shadow: 0 9px 28px rgba(235,166,45,.25); }
+.fight-primary-button:disabled { opacity: .35; cursor: not-allowed; filter: grayscale(1); }
+.fight-secondary-button { border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.055); color: white; }
+.fight-text-button { border: 0; background: transparent; color: rgba(255,255,255,.62); }
+
+.fight-loading,
+.fight-arena {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+}
+.fight-loading { display: grid; place-items: center; background: #070b16; color: white; font-weight: 800; }
+.fight-arena { overflow: hidden; color: white; touch-action: none; user-select: none; }
+.fight-arena::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 62%, rgba(255,255,255,.075), transparent 42%), linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px); background-size: auto, 64px 64px, 64px 64px; pointer-events: none; }
+.fight-stage-background { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.fight-stage-emblem { position: absolute; top: 17%; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,.07); font-size: clamp(28px, 6vw, 82px); font-weight: 950; letter-spacing: .16em; white-space: nowrap; text-shadow: 0 0 35px rgba(255,255,255,.08); }
+.fight-stage-crowd { position: absolute; inset: 47% 0 31%; opacity: .32; background: repeating-linear-gradient(91deg, transparent 0 13px, rgba(1,3,10,.9) 14px 24px, transparent 25px 34px), linear-gradient(transparent 55%, rgba(1,3,10,.92)); clip-path: polygon(0 55%, 2% 32%, 4% 52%, 7% 20%, 10% 48%, 13% 29%, 16% 52%, 19% 13%, 22% 44%, 25% 27%, 28% 52%, 31% 18%, 35% 48%, 39% 24%, 43% 51%, 47% 16%, 50% 46%, 54% 25%, 58% 53%, 62% 15%, 66% 46%, 70% 26%, 74% 52%, 78% 17%, 82% 49%, 86% 25%, 90% 50%, 94% 14%, 97% 42%, 100% 25%, 100% 100%, 0 100%); }
+.fight-stage-floor { position: absolute; inset: 69% -12% -20%; border-top: 2px solid color-mix(in srgb, var(--player-color) 42%, var(--opponent-color)); background: repeating-linear-gradient(90deg, transparent 0 79px, rgba(255,255,255,.04) 80px 81px), repeating-linear-gradient(0deg, transparent 0 36px, rgba(255,255,255,.035) 37px 38px), linear-gradient(90deg, color-mix(in srgb, var(--player-color) 9%, #050711) 0 46%, #070a13 50%, color-mix(in srgb, var(--opponent-color) 9%, #050711) 54% 100%); box-shadow: 0 -12px 45px rgba(0,0,0,.55), inset 0 18px 55px rgba(255,255,255,.025); transform: perspective(420px) rotateX(36deg); transform-origin: top; }
+.fight-stage-ring { position: absolute; top: 65%; left: 50%; width: min(62vw, 780px); height: 19%; transform: translateX(-50%) perspective(340px) rotateX(63deg); border: 2px solid rgba(255,255,255,.12); border-radius: 50%; box-shadow: 0 0 32px color-mix(in srgb, var(--player-color) 12%, var(--opponent-color)); }
+.fight-stage-pylon { position: absolute; top: 36%; bottom: 29%; width: 3px; background: linear-gradient(transparent, rgba(255,255,255,.22) 25% 75%, transparent); box-shadow: 0 0 18px currentColor; }
+.fight-stage-pylon::before, .fight-stage-pylon::after { content: ''; position: absolute; left: 50%; width: 14px; height: 14px; transform: translateX(-50%) rotate(45deg); border: 2px solid currentColor; background: #080b16; }
+.fight-stage-pylon::before { top: 18%; }
+.fight-stage-pylon::after { bottom: 18%; }
+.fight-stage-pylon.left { left: 7%; color: color-mix(in srgb, var(--player-color) 70%, white); }
+.fight-stage-pylon.right { right: 7%; color: color-mix(in srgb, var(--opponent-color) 70%, white); }
+.fight-arena-canvas { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; }
+.fight-hud { position: absolute; inset: max(14px, env(safe-area-inset-top)) 62px auto; z-index: 4; display: grid; grid-template-columns: minmax(0,1fr) 74px minmax(0,1fr); gap: 16px; align-items: start; pointer-events: none; }
+.fight-fighter-meters.right { text-align: right; }
+.fight-name-line { display: flex; align-items: center; gap: 7px; min-height: 25px; }
+.fight-fighter-meters.right .fight-name-line { flex-direction: row-reverse; }
+.fight-name-line strong { overflow: hidden; font-size: clamp(12px, 2vw, 18px); text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
+.fight-name-line small { padding: 2px 5px; border-radius: 4px; background: rgba(255,255,255,.13); font-size: 8px; }
+.fight-health-track,
+.fight-energy-track { position: relative; height: 15px; overflow: hidden; border: 2px solid rgba(255,255,255,.68); border-radius: 4px; background: rgba(0,0,0,.72); box-shadow: 0 4px 15px rgba(0,0,0,.45); }
+.fight-energy-track { height: 7px; margin-top: 4px; border-width: 1px; }
+.fight-health-track span,
+.fight-energy-track span { display: block; height: 100%; transition: width .1s linear; }
+.fight-energy-track span { background: linear-gradient(90deg, #31b7ff, #b5f5ff); }
+.fight-fighter-meters.right .fight-health-track span,
+.fight-fighter-meters.right .fight-energy-track span { margin-left: auto; }
+.fight-spell-cooldowns { display: flex; gap: 5px; margin-top: 5px; }
+.fight-fighter-meters.right .fight-spell-cooldowns { justify-content: flex-end; }
+.fight-spell-cooldowns > span { position: relative; display: grid; width: 24px; height: 24px; place-items: center; overflow: hidden; border: 1px solid rgba(255,255,255,.18); border-radius: 6px; background: rgba(0,0,0,.52); font-size: 12px; }
+.fight-spell-cooldowns i { position: absolute; inset: 0; transform-origin: bottom; background: rgba(0,0,0,.72); }
+.fight-timer { display: flex; flex-direction: column; align-items: center; padding: 5px; border: 1px solid rgba(255,255,255,.23); border-radius: 10px; background: rgba(2,5,13,.78); }
+.fight-timer small { color: rgba(255,255,255,.5); font-size: 7px; letter-spacing: .12em; }
+.fight-timer strong { font: 900 30px/1 ui-monospace, monospace; }
+.fight-timer.is-urgent strong { color: #ff4a4a; }
+.fight-pause-button { position: absolute; z-index: 5; top: max(16px, env(safe-area-inset-top)); right: 14px; width: 38px; height: 38px; }
+.fight-spell-callout { position: absolute; z-index: 5; top: clamp(96px, 15vh, 142px); display: flex; min-width: 190px; flex-direction: column; padding: 8px 18px 9px; border-block: 1px solid rgba(255,255,255,.28); background: linear-gradient(90deg, transparent, rgba(3,6,15,.78) 18% 82%, transparent); text-align: center; text-shadow: 0 2px 10px #000; pointer-events: none; animation: fightSpellCallout 1.05s ease-out both; }
+.fight-spell-callout.player { left: 12%; color: color-mix(in srgb, var(--player-color) 72%, white); }
+.fight-spell-callout.opponent { right: 12%; color: color-mix(in srgb, var(--opponent-color) 72%, white); }
+.fight-spell-callout small { color: rgba(255,255,255,.52); font-size: 8px; font-weight: 850; letter-spacing: .18em; text-transform: uppercase; }
+.fight-spell-callout strong { overflow: hidden; font-size: clamp(13px, 1.7vw, 21px); font-style: italic; font-weight: 950; letter-spacing: .045em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+@keyframes fightSpellCallout { 0% { opacity: 0; transform: translateY(8px) scaleX(.72); } 16%, 72% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-5px); } }
+.fight-intro { position: absolute; inset: 0; z-index: 6; display: grid; place-content: center; gap: 14px; text-align: center; pointer-events: none; text-shadow: 0 4px 20px #000; }
+.fight-intro > div { display: flex; align-items: center; gap: clamp(12px, 4vw, 42px); font-size: clamp(25px, 6vw, 64px); font-weight: 950; text-transform: uppercase; }
+.fight-intro b { color: #f3cf65; font-style: italic; }
+.fight-intro > strong { font-size: clamp(48px, 12vw, 112px); font-style: italic; }
+.fight-intro small { color: rgba(255,255,255,.62); font-weight: 750; letter-spacing: .08em; }
+.fight-touch-controls { position: absolute; inset: auto 18px max(18px, env(safe-area-inset-bottom)); z-index: 5; display: flex; justify-content: space-between; pointer-events: none; }
+.fight-touch-controls button { min-width: 54px; min-height: 48px; border: 1px solid rgba(255,255,255,.25); border-radius: 14px; background: rgba(6,10,22,.76); box-shadow: inset 0 1px rgba(255,255,255,.1); color: white; font-size: 11px; font-weight: 900; pointer-events: auto; touch-action: none; }
+.fight-touch-controls button:active { transform: scale(.94); background: color-mix(in srgb, var(--player-color) 35%, #080c18); }
+.fight-touch-controls button:disabled { opacity: .35; }
+.fight-movement-controls,
+.fight-attack-controls,
+.fight-mobile-spells { display: flex; align-items: flex-end; gap: 8px; }
+.fight-mobile-spells button { position: relative; min-width: 45px; font-size: 18px; }
+.fight-mobile-spells small { position: absolute; right: 4px; bottom: 3px; color: rgba(255,255,255,.55); font-size: 8px; }
+.fight-result-backdrop { z-index: 12; background: rgba(2,5,13,.67); }
+.fight-result-panel { display: flex; width: min(380px, 92vw); flex-direction: column; align-items: center; gap: 11px; padding: 28px; border: 1px solid rgba(255,255,255,.18); border-radius: 22px; background: linear-gradient(145deg, rgba(23,30,51,.98), rgba(5,8,18,.98)); box-shadow: 0 24px 80px rgba(0,0,0,.7); text-align: center; animation: fightModalIn .24s ease-out; }
+.fight-result-panel h2 { margin: 0 0 8px; font-size: 28px; }
+.fight-result-panel p { margin: 0; color: #f2ce67; font-size: 10px; font-weight: 900; letter-spacing: .16em; }
+.fight-result-panel button { width: 100%; }
+
+@media (min-width: 900px) and (hover: hover) {
+  .fight-touch-controls { opacity: .62; }
+}
+
+@media (max-width: 640px) {
+  .fight-confirmation-panel { padding: 22px 14px 16px; border-radius: 20px; }
+  .fight-picker { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .fight-picker-card { padding: 12px 7px; }
+  .fight-card-symbol { font-size: 25px; }
+  .fight-picker-card strong { font-size: 15px; }
+  .fight-card-title { font-size: 9px; }
+  .fight-card-spells > span { font-size: 8px; }
+  .fight-modal-actions { flex-direction: column-reverse; }
+  .fight-hud { inset-inline: 8px; grid-template-columns: minmax(0,1fr) 50px minmax(0,1fr); gap: 6px; }
+  .fight-timer strong { font-size: 24px; }
+  .fight-pause-button { top: 83px; right: 8px; }
+  .fight-spell-callout { top: 100px; min-width: 135px; max-width: 46vw; padding-inline: 9px; }
+  .fight-spell-callout.player { left: 2%; }
+  .fight-spell-callout.opponent { right: 2%; }
+  .fight-touch-controls { inset-inline: 8px; }
+  .fight-touch-controls button { min-width: 42px; min-height: 45px; padding: 3px; font-size: 9px; }
+  .fight-movement-controls, .fight-attack-controls, .fight-mobile-spells { gap: 4px; }
+  .fight-attack-controls { flex-wrap: wrap; max-width: 190px; justify-content: flex-end; }
+  .fight-mobile-spells { order: -1; width: 100%; justify-content: flex-end; }
+  .fight-mobile-spells button { min-width: 40px; font-size: 15px; }
+  .fight-intro small { padding: 0 22px; font-size: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fight-opponent-prompt i { animation-timing-function: steps(5, end); }
+  .fight-confirmation-panel,
+  .fight-result-panel { animation: none; }
+  .fight-picker-card { transition: none; }
 }

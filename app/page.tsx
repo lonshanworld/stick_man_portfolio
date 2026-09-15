@@ -1,69 +1,133 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+import { ElementType } from '../types';
+import { applyThemeVariables } from '../systems/themeEngine';
+import { soundEngine } from '../systems/soundEngine';
+import { CURSOR } from '../utils/cursorRef';
+
+// Portfolio Content Components
+import { NavBar } from '../components/portfolio/NavBar';
+import { HeroSection } from '../components/portfolio/HeroSection';
+import { ExperienceSection } from '../components/portfolio/ExperienceSection';
+import { ProjectsSection } from '../components/portfolio/ProjectsSection';
+import { SkillsSection } from '../components/portfolio/SkillsSection';
+import { AIChatTerminal } from '../components/portfolio/AIChatTerminal';
+import { ContactSection } from '../components/portfolio/ContactSection';
+
+const MagicalCursor = dynamic(
+  () => import('../components/world/MagicalCursor').then((mod) => mod.MagicalCursor),
+  { ssr: false }
+);
+const ParticleField = dynamic(
+  () => import('../components/world/ParticleField').then((mod) => mod.ParticleField),
+  { ssr: false }
+);
+const StickManWorld3D = dynamic(
+  () => import('../components/stickman/StickManWorld3D').then((mod) => mod.StickManWorld3D),
+  { ssr: false }
+);
 
 export default function Home() {
+  const [activeRealm, setActiveRealm] = useState<ElementType>('fire');
+  const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(true);
+  const [effectsReady, setEffectsReady] = useState(false);
+
+  // Apply dynamic theme variables on realm change
+  useEffect(() => {
+    applyThemeVariables(activeRealm);
+  }, [activeRealm]);
+
+  // Prioritize useful portfolio content, then load the visual world during idle time.
+  useEffect(() => {
+    const revealEffects = () => setEffectsReady(true);
+    const browserWindow = window as Window & {
+      requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (browserWindow.requestIdleCallback) {
+      const idleId = browserWindow.requestIdleCallback(revealEffects, { timeout: 1200 });
+      return () => browserWindow.cancelIdleCallback?.(idleId);
+    }
+    const timer = setTimeout(revealEffects, 250);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Global mouse cursor tracker without triggering React re-renders
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      CURSOR.x = e.clientX;
+      CURSOR.y = e.clientY;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
+  const handleSelectRealm = useCallback((realm: ElementType) => {
+    setActiveRealm(realm);
+    soundEngine.playElementalWhoosh(realm);
+  }, []);
+
+  const handleStickManWhisper = useCallback((realm: ElementType) => {
+    setActiveRealm(realm);
+  }, []);
+
+  const handleToggleSound = useCallback(() => {
+    setIsSoundEnabled((prev) => {
+      const next = !prev;
+      soundEngine.setEnabled(next);
+      return next;
+    });
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main
+      aria-label="Lon Shan portfolio"
+      className="relative min-h-screen text-white overflow-x-clip selection:bg-white/20"
+    >
+      {/* ── 1. Dynamic Atmospheric Background ────────────────────────── */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 z-0 pointer-events-none transition-all duration-700"
+        style={{ background: 'var(--theme-bg)' }}
+      />
+
+      {/* ── 2. Atmospheric Particle Field (Stars & Elemental Motes) ─── */}
+      {effectsReady && <ParticleField activeRealm={activeRealm} />}
+
+      {/* ── 3. Magical Dual-Ring Responsive Cursor ───────────────────── */}
+      {effectsReady && <MagicalCursor activeRealm={activeRealm} />}
+
+      {/* ── 4. Full-Screen 3D Stick Men World (Roaming across website) ── */}
+      {effectsReady && (
+        <StickManWorld3D
+          activeRealm={activeRealm}
+          onStickManSelect={handleSelectRealm}
+          onStickManWhisper={handleStickManWhisper}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      )}
+
+      {/* ── 6. Frosted Glass Top Navigation Bar ──────────────────────── */}
+      <NavBar
+        activeRealm={activeRealm}
+        isSoundEnabled={isSoundEnabled}
+        onToggleSound={handleToggleSound}
+      />
+
+      {/* ── 7. Main Portfolio Content Sections (Spacious & Elegant) ──── */}
+      <div className="relative z-10">
+        <HeroSection activeRealm={activeRealm} />
+        <ExperienceSection activeRealm={activeRealm} />
+        <ProjectsSection activeRealm={activeRealm} />
+        <SkillsSection activeRealm={activeRealm} />
+        <AIChatTerminal activeRealm={activeRealm} />
+        <ContactSection activeRealm={activeRealm} />
+      </div>
+
+    </main>
   );
 }
