@@ -86,6 +86,31 @@ function runePaths(f:MagicRuneFamily,i:number):StrokePath[]{switch(f){
   case'circuit':return[{points:[[-7,-7],[0,-7],[0,0],[7,0]]},{points:[[-7,7],[0,7],[0,0]]},{points:[[-7,-2],[-3,-2]]},{points:[[3,2],[7,2]]}];
 }}
 
+type TextureLayer='aura'|'shape'|'outerRunes'|'innerRunes';
+const layerTextureCache=new Map<string,THREE.CanvasTexture>();
+function drawCanvasPath(ctx:CanvasRenderingContext2D,path:StrokePath,color:string,width:number,dash:number[]=[]){
+  if(path.points.length<2)return;ctx.beginPath();ctx.moveTo(path.points[0][0],path.points[0][1]);for(const [x,y] of path.points.slice(1))ctx.lineTo(x,y);if(path.closed)ctx.closePath();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();ctx.setLineDash([]);
+}
+function spiritLayerTexture(layer:TextureLayer,profile:MagicSealProfile,primary:string,secondary:string):THREE.CanvasTexture|null{
+  if(typeof document==='undefined')return null;
+  const cacheKey=`${profile.shape}:${profile.rune}:${layer}:${primary}:${secondary}`;const cached=layerTextureCache.get(cacheKey);if(cached)return cached;
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const ctx=canvas.getContext('2d');if(!ctx)return null;
+  const scale=256/220;ctx.scale(scale,scale);ctx.translate(110,110);ctx.shadowBlur=6;ctx.globalCompositeOperation='lighter';
+  if(layer==='aura'){
+    const glow=ctx.createRadialGradient(0,0,0,0,0,78);glow.addColorStop(0,`${secondary}66`);glow.addColorStop(.42,`${primary}33`);glow.addColorStop(.72,'transparent');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,78,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=.34;ctx.lineWidth=12;ctx.lineCap='butt';for(const [start,end] of arcs(profile.ringMode)){ctx.beginPath();ctx.strokeStyle=(start/30)%2>=1?secondary:primary;ctx.arc(0,0,78,start*Math.PI/180,end*Math.PI/180);ctx.stroke()}ctx.globalAlpha=1;
+  }else if(layer==='shape'){
+    for(const path of sealShapePaths(profile.shape)){const color=path.layer==='outer'?primary:secondary,width=(path.layer==='outer'?2:1.8)*(path.width??1),dash=path.dashed==='outer'?profile.outerDash:path.dashed==='inner'?profile.innerDash:[];ctx.shadowColor=color;drawCanvasPath(ctx,path,color,width,dash)}
+  }else{
+    const outerLayer=layer==='outerRunes',count=outerLayer?18:24,radius=outerLayer?100:58,width=outerLayer?1.9:1.5;
+    for(let i=0;i<count;i++){ctx.save();ctx.rotate(i*Math.PI*2/count);ctx.translate(0,-radius);const color=i%2===0?(outerLayer?primary:secondary):(outerLayer?secondary:primary);ctx.shadowColor=color;ctx.globalAlpha=outerLayer?.92:.84;for(const path of runePaths(profile.rune,outerLayer?i:i+1))drawCanvasPath(ctx,path,color,width);ctx.restore()}ctx.globalAlpha=1;
+  }
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.minFilter=THREE.LinearFilter;texture.magFilter=THREE.LinearFilter;texture.generateMipmaps=false;texture.needsUpdate=true;layerTextureCache.set(cacheKey,texture);return texture;
+}
+function addSpiritFace(group:THREE.Group,texture:THREE.CanvasTexture|null,z:number):THREE.MeshBasicMaterial|null{
+  if(!texture)return null;const mat=new THREE.MeshBasicMaterial({map:texture,transparent:true,opacity:0,depthWrite:false,depthTest:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,toneMapped:false});const face=new THREE.Mesh(new THREE.PlaneGeometry(220*UNIT,220*UNIT),mat);face.position.z=z;face.renderOrder=110;face.frustumCulled=false;group.add(face);return mat;
+}
+
 function scaled(points:Point[],offset:Point=[0,0],rotation=0):THREE.Vector3[]{const c=Math.cos(rotation),s=Math.sin(rotation);return points.map(([x,y])=>new THREE.Vector3((x*c-y*s+offset[0])*UNIT,(x*s+y*c+offset[1])*UNIT,0))}
 function dashedSegments(points:THREE.Vector3[],closed:boolean,dash:[number,number]):THREE.Vector3[][]{
   const source=closed?[...points,points[0]]:points,result:THREE.Vector3[][]=[];const pattern=[dash[0]*UNIT,dash[1]*UNIT];let pi=0,remaining=pattern[0],drawing=true,active:THREE.Vector3[]=[];
@@ -118,8 +143,8 @@ function mergeLayer(group:THREE.Group){
 /** Spirit World artwork rebuilt as actual tubes, toruses, spheres, and depth. */
 export function createHandMagicSeal(element:ElementType,primary:string,secondary:string,facingTarget:THREE.Object3D):THREE.Group{
   const profile=MAGIC_SEAL_PROFILES[element],root=new THREE.Group();root.name=`hand-magic-seal-${element}`;root.visible=false;root.renderOrder=40;
-  const aura=new THREE.Group(),outer=new THREE.Group(),inner=new THREE.Group(),outerRunes=new THREE.Group(),innerRunes=new THREE.Group(),core=new THREE.Group(),release=new THREE.Group();
-  aura.name='seal-aura';outer.name='seal-outer';inner.name='seal-inner';outerRunes.name='seal-outer-runes';innerRunes.name='seal-inner-runes';core.name='seal-core';release.name='seal-release';root.add(aura,outer,inner,outerRunes,innerRunes,core,release);
+  const aura=new THREE.Group(),outer=new THREE.Group(),inner=new THREE.Group(),shapeFace=new THREE.Group(),outerRunes=new THREE.Group(),innerRunes=new THREE.Group(),core=new THREE.Group(),release=new THREE.Group();
+  aura.name='seal-aura';outer.name='seal-outer-depth';inner.name='seal-inner-depth';shapeFace.name='seal-source-shape';outerRunes.name='seal-outer-runes';innerRunes.name='seal-inner-runes';core.name='seal-core';release.name='seal-release';root.add(aura,outer,inner,shapeFace,outerRunes,innerRunes,core,release);
   const primaryMat=material(primary),secondaryMat=material(secondary),whiteMat=material(0xffffff),auraMat=material(secondary),releaseMat=material(primary),materials=[primaryMat,secondaryMat,whiteMat,auraMat,releaseMat];
   arcs(profile.ringMode).forEach(([start,end],i)=>addStroke(aura,{points:ellipse(78,78,start*Math.PI/180,end*Math.PI/180,Math.max(6,Math.ceil((end-start)/5)))},i%2?secondaryMat:primaryMat,.012));
   for(const path of sealShapePaths(profile.shape)){const mat=path.layer==='outer'?primaryMat:secondaryMat,radius=(path.layer==='outer'?.011:.0085)*(path.width??1),dash=path.dashed==='outer'?profile.outerDash:path.dashed==='inner'?profile.innerDash:undefined;addStroke(path.layer==='outer'?outer:inner,path,mat,radius,dash)}
@@ -129,18 +154,31 @@ export function createHandMagicSeal(element:ElementType,primary:string,secondary
   for(const z of[-.035,.035]){const rail=new THREE.Mesh(new THREE.TorusGeometry(.69,.012,6,72),z<0?secondaryMat:primaryMat);rail.position.z=z;aura.add(rail)}
   for(let i=0;i<12;i++){const angle=i*Math.PI*2/12,pillar=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.07,5),i%2?secondaryMat:primaryMat);pillar.rotation.x=Math.PI/2;pillar.position.set(Math.cos(angle)*.69,Math.sin(angle)*.69,0);aura.add(pillar)}
   [aura,outer,inner,outerRunes,innerRunes,core,release].forEach(mergeLayer);
+  const faceMaterials:THREE.MeshBasicMaterial[]=[];
   root.traverse(node=>{if(node instanceof THREE.Mesh){node.renderOrder=100;node.frustumCulled=false}});
-  root.userData.seal={profile,facingTarget,aura,outer,inner,outerRunes,innerRunes,core,release,materials,activation:0};return root;
+  root.userData.seal={profile,primary,secondary,facingTarget,aura,outer,inner,shapeFace,outerRunes,innerRunes,core,release,materials,faceMaterials,facesReady:false,activation:0};return root;
+}
+
+function ensureSpiritFaces(seal:{profile:MagicSealProfile;primary:string;secondary:string;aura:THREE.Group;shapeFace:THREE.Group;outerRunes:THREE.Group;innerRunes:THREE.Group;faceMaterials:THREE.MeshBasicMaterial[];facesReady:boolean}){
+  if(seal.facesReady)return;
+  const faces=[
+    addSpiritFace(seal.aura,spiritLayerTexture('aura',seal.profile,seal.primary,seal.secondary),.045),
+    addSpiritFace(seal.shapeFace,spiritLayerTexture('shape',seal.profile,seal.primary,seal.secondary),.052),
+    addSpiritFace(seal.outerRunes,spiritLayerTexture('outerRunes',seal.profile,seal.primary,seal.secondary),.058),
+    addSpiritFace(seal.innerRunes,spiritLayerTexture('innerRunes',seal.profile,seal.primary,seal.secondary),.064),
+  ].filter((item):item is THREE.MeshBasicMaterial=>Boolean(item));
+  seal.faceMaterials.push(...faces);seal.facesReady=true;
 }
 
 /** Locks the seal center to the palm and points its physical front face toward the caster. */
 export function updateHandMagicSeal(root:THREE.Group,active:boolean,time:number,delta:number,intensity=1):void{
-  const seal=root.userData.seal as {profile:MagicSealProfile;facingTarget:THREE.Object3D;aura:THREE.Group;outer:THREE.Group;inner:THREE.Group;outerRunes:THREE.Group;innerRunes:THREE.Group;core:THREE.Group;release:THREE.Group;materials:THREE.MeshStandardMaterial[];activation:number}|undefined;if(!seal)return;
+  const seal=root.userData.seal as {profile:MagicSealProfile;primary:string;secondary:string;facingTarget:THREE.Object3D;aura:THREE.Group;outer:THREE.Group;inner:THREE.Group;shapeFace:THREE.Group;outerRunes:THREE.Group;innerRunes:THREE.Group;core:THREE.Group;release:THREE.Group;materials:THREE.MeshStandardMaterial[];faceMaterials:THREE.MeshBasicMaterial[];facesReady:boolean;activation:number}|undefined;if(!seal)return;
+  if(active)ensureSpiritFaces(seal);
   seal.activation=THREE.MathUtils.lerp(seal.activation,active?1:0,1-Math.exp(-delta*(active?18:11)));root.visible=seal.activation>.012;if(!root.visible)return;
   root.position.set(0,0,0);
   if(root.parent){root.parent.updateWorldMatrix(true,false);seal.facingTarget.updateWorldMatrix(true,false);root.parent.getWorldPosition(handPosition);seal.facingTarget.getWorldPosition(targetPosition);direction.subVectors(targetPosition,handPosition).normalize();direction.multiplyScalar(.72).addScaledVector(cameraFacing,.7).normalize();xAxis.crossVectors(sealUp,direction).normalize();if(xAxis.lengthSq()<.001)xAxis.set(1,0,0);yAxis.crossVectors(direction,xAxis).normalize();basis.makeBasis(xAxis,yAxis,direction);worldQuaternion.setFromRotationMatrix(basis);root.parent.getWorldQuaternion(parentQuaternion);root.quaternion.copy(parentQuaternion).invert().multiply(worldQuaternion)}
-  const pulse=1+Math.sin(time*4.2)*.035;root.scale.setScalar((.82+seal.activation*.18)*pulse*Math.max(.9,intensity));
-  seal.outer.rotation.z=rotation(time,seal.profile.outerSeconds,seal.profile.outerDirection);seal.inner.rotation.z=rotation(time,seal.profile.innerSeconds,seal.profile.innerDirection);seal.aura.rotation.z=rotation(time,seal.profile.outerSeconds,seal.profile.outerDirection);seal.outerRunes.rotation.z=rotation(time,seal.profile.glyphSeconds,-seal.profile.outerDirection as 1|-1);seal.innerRunes.rotation.z=rotation(time,seal.profile.glyphSeconds*.9,seal.profile.innerDirection);seal.core.scale.setScalar(.82+Math.sin(time*Math.PI*1.25)*.16);
-  const releaseProgress=(time*.95)%1;seal.release.scale.setScalar(.4+releaseProgress*(seal.profile.releaseScale-.4));seal.materials.forEach((mat,i)=>{mat.opacity=seal.activation*(i===3?.18:i===4?(1-releaseProgress)*.72:i===2?.98:.86)});
+  const pulse=1+Math.sin(time*4.2)*.035;root.scale.setScalar(.88*(.82+seal.activation*.18)*pulse*Math.max(.9,intensity));
+  const innerRotation=rotation(time,seal.profile.innerSeconds,seal.profile.innerDirection);seal.outer.rotation.z=innerRotation;seal.inner.rotation.z=innerRotation;seal.shapeFace.rotation.z=innerRotation;seal.aura.rotation.z=rotation(time,seal.profile.outerSeconds,seal.profile.outerDirection);seal.outerRunes.rotation.z=rotation(time,seal.profile.glyphSeconds,-seal.profile.outerDirection as 1|-1);seal.innerRunes.rotation.z=rotation(time,seal.profile.glyphSeconds*.9,seal.profile.innerDirection);seal.core.scale.setScalar(.82+Math.sin(time*Math.PI*1.25)*.16);
+  const releaseProgress=(time*.95)%1;seal.release.scale.setScalar(.4+releaseProgress*(seal.profile.releaseScale-.4));seal.materials.forEach((mat,i)=>{mat.opacity=seal.activation*(i===3?.08:i===4?(1-releaseProgress)*.52:i===2?.72:.24)});seal.faceMaterials.forEach((mat,i)=>{mat.opacity=seal.activation*(i===0?.72:.98)});
 }
 function rotation(time:number,seconds:number,direction:1|-1){return direction*time*Math.PI*2/seconds}
