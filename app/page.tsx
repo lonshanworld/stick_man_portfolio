@@ -16,21 +16,16 @@ import { SkillsSection } from '../components/portfolio/SkillsSection';
 import { AIChatTerminal } from '../components/portfolio/AIChatTerminal';
 import { ContactSection } from '../components/portfolio/ContactSection';
 
-const MagicalCursor = dynamic(
-  () => import('../components/world/MagicalCursor').then((mod) => mod.MagicalCursor),
-  { ssr: false }
-);
-const ParticleField = dynamic(
-  () => import('../components/world/ParticleField').then((mod) => mod.ParticleField),
-  { ssr: false }
-);
 const StickManWorld3D = dynamic(
-  () => import('../components/stickman/StickManWorld3D').then((mod) => mod.StickManWorld3D),
-  { ssr: false }
+  () =>
+    import('../components/stickman/StickManWorld3D').then(
+      (mod) => mod.StickManWorld3D,
+    ),
+  { ssr: false },
 );
 
 export default function Home() {
-  const [activeRealm, setActiveRealm] = useState<ElementType>('fire');
+  const [activeRealm, setActiveRealm] = useState<ElementType>('light');
   const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(true);
   const [effectsReady, setEffectsReady] = useState(false);
 
@@ -43,11 +38,16 @@ export default function Home() {
   useEffect(() => {
     const revealEffects = () => setEffectsReady(true);
     const browserWindow = window as Window & {
-      requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+      requestIdleCallback?: (
+        callback: IdleRequestCallback,
+        options?: IdleRequestOptions,
+      ) => number;
       cancelIdleCallback?: (id: number) => void;
     };
     if (browserWindow.requestIdleCallback) {
-      const idleId = browserWindow.requestIdleCallback(revealEffects, { timeout: 1200 });
+      const idleId = browserWindow.requestIdleCallback(revealEffects, {
+        timeout: 1200,
+      });
       return () => browserWindow.cancelIdleCallback?.(idleId);
     }
     const timer = setTimeout(revealEffects, 250);
@@ -72,9 +72,8 @@ export default function Home() {
     soundEngine.playElementalWhoosh(realm);
   }, []);
 
-  const handleStickManWhisper = useCallback((realm: ElementType) => {
-    setActiveRealm(realm);
-  }, []);
+  // Dialogue can arrive after another character is selected; selection owns the theme.
+  const handleStickManWhisper = useCallback(() => {}, []);
 
   const handleToggleSound = useCallback(() => {
     setIsSoundEnabled((prev) => {
@@ -87,22 +86,15 @@ export default function Home() {
   return (
     <main
       aria-label="Lon Shan portfolio"
-      className="relative min-h-screen text-white overflow-x-clip selection:bg-white/20"
+      data-realm={activeRealm}
+      className="folio relative min-h-screen overflow-x-clip"
     >
-      {/* ── 1. Dynamic Atmospheric Background ────────────────────────── */}
       <div
         aria-hidden="true"
-        className="fixed inset-0 z-0 pointer-events-none transition-all duration-700"
-        style={{ background: 'var(--theme-bg)' }}
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{ background: 'var(--folio-bg)' }}
       />
 
-      {/* ── 2. Atmospheric Particle Field (Stars & Elemental Motes) ─── */}
-      {effectsReady && <ParticleField activeRealm={activeRealm} />}
-
-      {/* ── 3. Magical Dual-Ring Responsive Cursor ───────────────────── */}
-      {effectsReady && <MagicalCursor activeRealm={activeRealm} />}
-
-      {/* ── 4. Full-Screen 3D Stick Men World (Roaming across website) ── */}
       {effectsReady && (
         <StickManWorld3D
           activeRealm={activeRealm}
@@ -111,23 +103,20 @@ export default function Home() {
         />
       )}
 
-      {/* ── 6. Frosted Glass Top Navigation Bar ──────────────────────── */}
       <NavBar
         activeRealm={activeRealm}
         isSoundEnabled={isSoundEnabled}
         onToggleSound={handleToggleSound}
       />
 
-      {/* ── 7. Main Portfolio Content Sections (Spacious & Elegant) ──── */}
-      <div className="relative z-10">
-        <HeroSection activeRealm={activeRealm} />
-        <ExperienceSection activeRealm={activeRealm} />
+      <div className="folio-content relative">
+        <HeroSection activeRealm={activeRealm} onSelectRealm={handleSelectRealm} />
         <ProjectsSection activeRealm={activeRealm} />
+        <ExperienceSection activeRealm={activeRealm} />
         <SkillsSection activeRealm={activeRealm} />
         <AIChatTerminal activeRealm={activeRealm} />
         <ContactSection activeRealm={activeRealm} />
       </div>
-
     </main>
   );
 }

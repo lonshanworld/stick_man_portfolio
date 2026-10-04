@@ -3,7 +3,8 @@
 import React from 'react';
 import { ElementType } from '../../types';
 import { STICK_MAN_ARCHETYPES } from '../../data/stickManArchetypes';
-import { Volume2, VolumeX, Sparkles, Zap, Shield, Flame } from 'lucide-react';
+import { Volume2, VolumeX, Zap, Shield } from 'lucide-react';
+import { ElementSigil } from '../ui/SpellIcon';
 
 interface StickManHUDProps {
   activeRealm: ElementType;
@@ -42,19 +43,19 @@ export const StickManHUD: React.FC<StickManHUDProps> = ({
                 boxShadow: `0 0 12px ${def.glowColor}`,
               }}
             >
-              {def.symbol}
+              <ElementSigil element={activeRealm} size={23} />
             </div>
             <div>
-              <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1.5">
+              <div className="text-[14px] font-bold tracking-wider uppercase flex items-center gap-1.5">
                 <span>{def.name}</span>
                 <span
-                  className="px-1.5 py-0.5 rounded text-[8px] font-mono uppercase"
+                  className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase"
                   style={{ backgroundColor: `${def.primaryColor}30`, color: def.secondaryColor }}
                 >
                   {def.id}
                 </span>
               </div>
-              <div className="text-[10px] text-white/60">{def.title}</div>
+              <div className="text-[12px] text-white/60">{def.title}</div>
             </div>
           </div>
 
@@ -72,9 +73,9 @@ export const StickManHUD: React.FC<StickManHUDProps> = ({
         </div>
 
         {/* Head & Body Power Breakdown */}
-        <div className="grid grid-cols-2 gap-2 text-[10px] mb-2.5 bg-white/5 p-2 rounded-xl border border-white/5">
+        <div className="grid grid-cols-2 gap-2 text-[12px] mb-2.5 bg-white/5 p-2 rounded-xl border border-white/5">
           <div className="flex items-center gap-1 text-white/80">
-            <Flame size={12} style={{ color: def.primaryColor }} />
+            <span style={{ color: def.primaryColor }}><ElementSigil element={activeRealm} size={14} /></span>
             <span className="truncate">{def.headPower}</span>
           </div>
           <div className="flex items-center gap-1 text-white/80">
@@ -84,14 +85,14 @@ export const StickManHUD: React.FC<StickManHUDProps> = ({
         </div>
 
         {/* Current Whisper Quote */}
-        <p className="text-[11px] leading-relaxed text-white/90 italic mb-3">
+        <p className="text-[13px] leading-relaxed text-white/90 italic mb-3">
           &quot;{whisperText || def.dialogueQuote}&quot;
         </p>
 
         {/* Special Move Button */}
         <button
           onClick={onTriggerSpecialMove}
-          className="w-full py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg cursor-pointer"
+          className="w-full py-2 px-3 rounded-xl font-bold text-[14px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg cursor-pointer"
           style={{
             background: `linear-gradient(135deg, ${def.primaryColor}, ${def.secondaryColor})`,
             boxShadow: `0 4px 18px ${def.glowColor}`,

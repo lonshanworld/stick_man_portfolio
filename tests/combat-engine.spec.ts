@@ -199,6 +199,89 @@ test('a fighter remains damageable without knockback while frozen by Still Secon
   expect(afterPunch.x).toBeCloseTo(frozenX, 5);
 });
 
+test('Root Entanglement binds feet through movement, jumping and collision, then releases them', () => {
+  const engine = new CombatEngine(config('trees'), config('fire'));
+  beginRound(engine);
+  advance(engine, 0.86, { ...idle(), move: 1 }, { ...idle(), move: -1 });
+  engine.step(1 / 60, { ...idle(), spell: 0 }, idle());
+  advance(engine, 1);
+  const bound = engine.snapshot().opponent;
+  expect(bound.rootTime).toBeGreaterThan(2);
+  expect(bound.health).toBeLessThan(100);
+  expect(bound.hitStun).toBe(0);
+  engine.step(1 / 60, idle(), { ...idle(), jump: true, kick: true, move: -1 });
+  expect(engine.snapshot().opponent.y).toBe(0);
+  expect(engine.snapshot().opponent.action).not.toBe('kick');
+  advance(engine, 0.5, { ...idle(), move: 1 }, { ...idle(), move: -1 });
+  expect(engine.snapshot().opponent.x).toBeCloseTo(bound.x, 5);
+  advance(engine, 1.9, idle(), { ...idle(), move: 1 });
+  expect(engine.snapshot().opponent.rootTime).toBe(0);
+  expect(engine.snapshot().opponent.x).toBeGreaterThan(bound.x);
+});
+
+test('a root-bound fighter can punch and use mobility magic to escape', () => {
+  const engine = new CombatEngine(config('trees'), config('space'));
+  beginRound(engine);
+  advance(engine, 0.86, { ...idle(), move: 1 }, { ...idle(), move: -1 });
+  engine.step(1 / 60, { ...idle(), spell: 0 }, idle());
+  advance(engine, 1);
+  const boundX = engine.snapshot().opponent.x;
+  engine.step(1 / 60, idle(), { ...idle(), punch: true });
+  expect(engine.snapshot().opponent.action).toBe('punch');
+  advance(engine, 0.5);
+  engine.step(1 / 60, idle(), { ...idle(), spell: 1 });
+  expect(engine.snapshot().opponent.action).toBe('spell2');
+  advance(engine, 0.6);
+  expect(engine.snapshot().opponent.rootTime).toBe(0);
+  expect(Math.abs(engine.snapshot().opponent.x - boundX)).toBeGreaterThan(1);
+});
+
+test('an active ward blocks the root binding', () => {
+  const engine = new CombatEngine(config('trees'), config('water'));
+  beginRound(engine);
+  advance(engine, 0.86, { ...idle(), move: 1 }, { ...idle(), move: -1 });
+  engine.step(1 / 60, { ...idle(), spell: 0 }, { ...idle(), spell: 1 });
+  advance(engine, 1);
+  expect(engine.snapshot().opponent.shieldTime).toBeGreaterThan(0);
+  expect(engine.snapshot().opponent.rootTime).toBe(0);
+});
+
+test('Abyssal Grasp slows and damages its target when the skeletal fingers close', () => {
+  const engine = new CombatEngine(config('dark'), config('fire'));
+  beginRound(engine);
+  advance(engine, .86, { ...idle(), move: 1 }, { ...idle(), move: -1 });
+  engine.step(1 / 60, { ...idle(), spell: 0 }, idle());
+  advance(engine, .5);
+  expect(engine.snapshot().opponent.health).toBe(100);
+  advance(engine, .3);
+  expect(engine.snapshot().opponent.health).toBeLessThan(100);
+  expect(engine.snapshot().opponent.slowTime).toBeGreaterThan(1.5);
+});
+
+test('the retained Phantom Bat Swarm deals damage after its summoning gesture', () => {
+  const engine = new CombatEngine(config('dark'), config('fire'));
+  beginRound(engine);
+  advance(engine, .86, { ...idle(), move: 1 }, { ...idle(), move: -1 });
+  engine.step(1 / 60, { ...idle(), spell: 1 }, idle());
+  advance(engine, .4);
+  expect(engine.snapshot().opponent.health).toBe(100);
+  advance(engine, .3);
+  expect(engine.snapshot().opponent.health).toBeLessThan(100);
+});
+
+test('Fallen Lucifer grants a seven second demon form without a cloak or shield', () => {
+  const engine = new CombatEngine(config('dark'), config('fire'));
+  beginRound(engine);
+  engine.step(1 / 60, { ...idle(), spell: 2 }, idle());
+  advance(engine, .7);
+  expect(engine.snapshot().player.demonTime).toBeGreaterThan(6.8);
+  expect(engine.snapshot().player.archangelTime).toBe(0);
+  expect(engine.snapshot().player.shieldTime).toBe(0);
+  expect(engine.snapshot().player.invulnerable).toBe(0);
+  advance(engine, 7);
+  expect(engine.snapshot().player.demonTime).toBe(0);
+});
+
 test('spell energy and cooldown prevent an immediate repeat cast', () => {
   const engine = new CombatEngine(config('fire'), config('water'));
   beginRound(engine);
@@ -253,17 +336,81 @@ test('all elemental archetypes can start and finish with exactly three combat sp
   }
 });
 
-test('opponent selection accepts only a different fighter from 1 through 5 seconds', () => {
+test('opponent selection accepts a different fighter immediately through 5 seconds', () => {
   const first = { id: 'first' };
   const second = { id: 'second' };
   const opened = resolveFightSelection(null, first, 10_000);
   expect(opened.type).toBe('start-window');
   if (opened.type !== 'start-window') return;
-  expect(resolveFightSelection(opened.pending, second, 10_999).type).toBe('too-early');
+  expect(resolveFightSelection(opened.pending, second, 10_001).type).toBe('match');
   expect(resolveFightSelection(opened.pending, first, 12_000).type).toBe('same-fighter');
   expect(resolveFightSelection(opened.pending, second, 11_000).type).toBe('match');
   expect(resolveFightSelection(opened.pending, second, 15_000).type).toBe('match');
   const expired = resolveFightSelection(opened.pending, second, 15_001);
   expect(expired.type).toBe('start-window');
   if (expired.type === 'start-window') expect(expired.pending.entity.id).toBe('second');
+});
+
+test('a missed long spell can hit after recovery, once per cast', () => {
+  const engine = new CombatEngine(config('robot'), config('fire'));
+  beginRound(engine);
+  engine.step(1 / 60, { ...idle(), spell: 0 }, idle());
+  const cast = engine.drainEvents().find(event => event.type === 'cast');
+  if (!cast || cast.type !== 'cast') throw new Error('Expected cast');
+  engine.setSpellHitAreas(cast.castId, []);
+  advance(engine, 1);
+  expect(engine.snapshot().opponent.health).toBe(100);
+  expect(engine.snapshot().player.action).toBe('idle');
+  engine.setSpellHitAreas(cast.castId, [{ minX: 2.8, maxX: 3.4, minY: 0, maxY: 1 }]);
+  advance(engine, .05);
+  const health = engine.snapshot().opponent.health;
+  expect(health).toBeLessThan(100);
+  advance(engine, .6);
+  expect(engine.snapshot().opponent.health).toBe(health);
+});
+
+test('visible contact respects gaps, height, and expiration', () => {
+  const engine = new CombatEngine(config('robot'), config('fire'));
+  beginRound(engine);
+  engine.step(1 / 60, { ...idle(), spell: 0 }, idle());
+  const cast = engine.drainEvents().find(event => event.type === 'cast');
+  if (!cast || cast.type !== 'cast') throw new Error('Expected cast');
+  engine.setSpellHitAreas(cast.castId, [
+    { minX: -4, maxX: -2, minY: 0, maxY: 1 },
+    { minX: 4, maxX: 5, minY: 0, maxY: 1 },
+    { minX: 2.8, maxX: 3.4, minY: 3, maxY: 4 },
+  ]);
+  advance(engine, ELEMENTAL_SPELLS.robot[0].duration + .1);
+  expect(engine.snapshot().opponent.health).toBe(100);
+  engine.setSpellHitAreas(cast.castId, [{ minX: 2.8, maxX: 3.4, minY: 0, maxY: 1 }]);
+  advance(engine, .1);
+  expect(engine.snapshot().opponent.health).toBe(100);
+});
+
+test('contact along a long spell hits away from the endpoint', () => {
+  const engine = new CombatEngine(config('lightning'), config('fire'));
+  beginRound(engine);
+  engine.step(1 / 60, { ...idle(), spell: 1 }, idle());
+  const cast = engine.drainEvents().find(event => event.type === 'cast');
+  if (!cast || cast.type !== 'cast') throw new Error('Expected cast');
+  engine.setSpellHitAreas(cast.castId, [{ minX: -3.1, maxX: 5.5, minY: .4, maxY: .7 }]);
+  advance(engine, .6);
+  expect(engine.snapshot().opponent.health).toBeLessThan(100);
+});
+
+test('a healing summon restores its caster without an enemy contact area', () => {
+  const engine = new CombatEngine(config('healing'), config('fire'));
+  beginRound(engine);
+  advance(engine, .86, { ...idle(), move: 1 }, { ...idle(), move: -1 });
+  engine.step(1 / 60, idle(), { ...idle(), kick: true });
+  advance(engine, .75);
+  const health = engine.snapshot().player.health;
+  expect(health).toBeLessThan(100);
+  engine.step(1 / 60, { ...idle(), spell: 1 }, idle());
+  const cast = engine.drainEvents().find(event => event.type === 'cast');
+  if (!cast || cast.type !== 'cast') throw new Error('Expected cast');
+  engine.setSpellHitAreas(cast.castId, []);
+  advance(engine, .6);
+  expect(engine.snapshot().player.health).toBeGreaterThan(health);
+  expect(engine.snapshot().opponent.health).toBe(100);
 });

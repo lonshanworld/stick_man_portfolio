@@ -53,6 +53,26 @@ class SoundEngine {
     }
   }
 
+  public playCombatImpact(damage: number) {
+    if (!this.isEnabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const now = this.ctx.currentTime;
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(160 + Math.min(40, damage) * 2, now);
+      osc.frequency.exponentialRampToValueAtTime(38, now + .12);
+      gain.gain.setValueAtTime(.12 + Math.min(40, damage) * .003, now);
+      gain.gain.exponentialRampToValueAtTime(.001, now + .16);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + .17);
+    } catch {}
+  }
+
   public playStickManJump() {
     if (!this.isEnabled) return;
     this.initCtx();

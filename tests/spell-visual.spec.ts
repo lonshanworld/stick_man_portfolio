@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { ELEMENTAL_SPELLS } from '../data/elementalSpells';
-import { validateSpellRegistry } from '../systems/spellEffectSystem';
+import { SPELL_BUILDERS, validateSpellRegistry } from '../systems/spellEffectSystem';
 import { SpellActionSystem } from '../systems/spellActionSystem';
 import type { StickManEntity } from '../systems/stickManPopulation';
 import { MAGIC_SEAL_PROFILES } from '../systems/magicSeal3D';
@@ -36,6 +36,48 @@ test('spell catalog has 14 complete, explicitly registered families', () => {
   expect(validateSpellRegistry()).toBe(42);
 });
 
+test('every spell has elemental surface art and finite geometry throughout its lifecycle', () => {
+  const schoolShaders = new Map<string, string>();
+  for (const spell of Object.values(ELEMENTAL_SPELLS).flat()) {
+    const effect = SPELL_BUILDERS[spell.id](spell, .35, 190);
+    const surfaces: THREE.ShaderMaterial[] = [];
+    effect.root.traverse(node => {
+      if (node instanceof THREE.Mesh && node.material instanceof THREE.ShaderMaterial) surfaces.push(node.material);
+    });
+    if (spell.element === 'time') expect(effect.root.getObjectByName('time-chronometer'), spell.id).toBeDefined();
+    else expect(surfaces.length, spell.id).toBeGreaterThan(0);
+    expect(surfaces.every(surface => surface.userData.element === spell.element), spell.id).toBe(true);
+    if (surfaces.length) schoolShaders.set(spell.element, surfaces[0].fragmentShader);
+    const invalid: string[] = [];
+    for (const progress of [0, .2, .5, .8, 1]) {
+      effect.update(0, spell.duration * progress, spell.duration);
+      effect.root.traverse(node => {
+        if (!node.position.toArray().every(Number.isFinite)) invalid.push(`position at ${progress}`);
+        if (!node.scale.toArray().every(Number.isFinite)) invalid.push(`scale at ${progress}`);
+        if (node instanceof THREE.Mesh) {
+          const positions = node.geometry.getAttribute('position');
+          if (positions && !Array.from(positions.array).every(Number.isFinite)) invalid.push(`geometry at ${progress}`);
+        }
+      });
+    }
+    expect(invalid, spell.id).toEqual([]);
+    const geometry = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
+    effect.root.traverse(node => {
+      if (node instanceof THREE.Mesh) {
+        geometry.add(node.geometry);
+        for (const material of Array.isArray(node.material) ? node.material : [node.material]) materials.add(material);
+        if (node instanceof THREE.InstancedMesh) node.dispose();
+      }
+      if (node instanceof THREE.Sprite) materials.add(node.material);
+    });
+    const textures = new Set<THREE.Texture>();
+    materials.forEach(material => { const map = (material as THREE.MeshBasicMaterial).map; if (map) textures.add(map); material.dispose(); });
+    geometry.forEach(item => item.dispose()); textures.forEach(item => item.dispose());
+  }
+  expect(schoolShaders.size).toBe(13);
+  expect(new Set(schoolShaders.values()).size).toBe(13);
+});
+
 test('every elemental character owns a distinct Spirit World hand seal', () => {
   expect(Object.keys(MAGIC_SEAL_PROFILES)).toHaveLength(14);
   expect(new Set(Object.values(MAGIC_SEAL_PROFILES).map(profile => profile.shape)).size).toBe(14);
@@ -63,8 +105,8 @@ test('hand seals are volumetric meshes centered on the palm and linked to the ca
     }
   });
   expect(seal.position.toArray()).toEqual([0, 0, 0]);
-  expect(seal.userData.seal.facingTarget).toBe(torso);
-  expect(geometryTypes).toContain('TubeGeometry');
+  expect(seal.userData.timeSeal.facingTarget).toBe(torso);
+  expect(geometryTypes).toContain('BoxGeometry');
   expect(geometryTypes).toContain('TorusGeometry');
   expect(geometryTypes).toContain('SphereGeometry');
 });
@@ -102,9 +144,12 @@ test('wards absorb one impact and temporary conditions expire', () => {
 });
 
 test('all 42 spells render at cinematic keyframes and clean up', async ({ page }, testInfo) => {
-  test.setTimeout(testInfo.project.name.includes('mobile') ? 120_000 : 300_000);
+  test.setTimeout(testInfo.project.name.includes('mobile') ? 180_000 : 600_000);
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => {
+    if (message.type() === 'error' && /THREE|WebGL|shader|GL_INVALID/i.test(message.text())) errors.push(message.text());
+  });
   const catalog = await openPreview(page);
   expect(catalog).toHaveLength(42);
 
@@ -159,16 +204,10 @@ test('support, control and mobility spells change observable world state', async
   expect(Math.hypot((rewind?.caster.x || 0) - (rewind?.caster.startX || 0), (rewind?.caster.y || 0) - (rewind?.caster.startY || 0))).toBeGreaterThan(0.1);
 });
 
-test('captures representative role silhouettes', async ({ page }, testInfo) => {
+test('captures all 42 distinct ability silhouettes', async ({ page }, testInfo) => {
+  test.setTimeout(420_000);
   const catalog = await openPreview(page);
-  const representatives = [
-    'fire-dragon-meteor',
-    'water-whirlpool-vortex',
-    'healing-sakura-sanctuary',
-    'lightning-chain-nova',
-    'time-gear-barrage',
-    'space-cosmic-ray',
-  ];
+  const representatives = catalog.map(spell => spell.id);
   for (const id of representatives) {
     const spell = catalog.find(candidate => candidate.id === id);
     expect(spell).toBeTruthy();

@@ -1,5 +1,22 @@
 'use client';
 
+import { healingCastPose } from '../../systems/healingCastPose';
+
+import { updateHealingPower } from '../../systems/healingVitality';
+import { robotCastPose } from '../../systems/robotCastPose';
+
+import { updateTimePower } from '../../systems/timeChronology';
+import { timeCastPose } from '../../systems/timeCastPose';
+
+import { updateFallenLucifer } from '../../systems/fallenLucifer';
+import { updateArchangelMichael } from '../../systems/archangelMichael';
+import { updateSpacePower } from '../../systems/spaceCosmos';
+import { spaceCastPose } from '../../systems/spaceCastPose';
+import { lightCastPose } from '../../systems/lightCastPose';
+import { soilCastPose } from '../../systems/soilCastPose';
+import { treeCastPose } from '../../systems/treeCastPose';
+import { darkCastPose } from '../../systems/darkCastPose';
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import * as THREE from 'three';
@@ -145,6 +162,19 @@ function applySpellPose(char: StickMan3DCharacter, pose: SpellPose, time: number
       char.rightLeg.knee.rotation.x = 0.5;
       break;
   }
+  if ((char.element === 'healing' || char.element === 'time' || char.element === 'robot' || char.element === 'soil' || char.element === 'trees' || char.element === 'dark' || char.element === 'light' || char.element === 'space') && pose.casting && pose.spellId) {
+    const earth = (char.element === 'healing' ? healingCastPose : char.element === 'time' ? timeCastPose : char.element === 'robot' ? robotCastPose : char.element === 'space' ? spaceCastPose : char.element === 'light' ? lightCastPose : char.element === 'dark' ? darkCastPose : char.element === 'trees' ? treeCastPose : soilCastPose)(pose.spellId, pose.castProgress ?? p);
+    char.bodyGroup.rotation.set(earth.bodyX, 0, earth.bodyZ);
+    char.bodyGroup.position.y = earth.bodyY;
+    char.leftArm.shoulder.rotation.set(earth.leftShoulderX, 0, earth.leftShoulderZ);
+    char.rightArm.shoulder.rotation.set(earth.rightShoulderX, 0, earth.rightShoulderZ);
+    char.leftArm.elbow.rotation.x = earth.leftElbow;
+    char.rightArm.elbow.rotation.x = earth.rightElbow;
+    char.leftLeg.hip.rotation.x = earth.leftHip;
+    char.rightLeg.hip.rotation.x = earth.rightHip;
+    char.leftLeg.knee.rotation.x = earth.leftKnee;
+    char.rightLeg.knee.rotation.x = earth.rightKnee;
+  }
   if (pose.shielded) char.powerCoreMesh.scale.setScalar(1.55 + Math.sin(time * 4) * 0.12);
   if (pose.shielded) {
     char.magicSealMesh.scale.setScalar(1.28 + Math.sin(time * 3.2) * 0.06);
@@ -194,6 +224,28 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
   // Initialize stick man population across the website sections
   useEffect(() => {
     const pop = spawnStickManPopulation();
+    // Keep the opening companions in view even when stacked mobile sections
+    // make the document much taller. Their movement still uses document %.
+    const hero = document.getElementById('hero')?.getBoundingClientRect();
+    if (hero) {
+      const documentHeight = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight,
+        window.innerHeight * 2,
+      );
+      const heroTop = hero.top + window.scrollY;
+      const visibleHeight = Math.min(hero.height, window.innerHeight);
+      const projectHeroY = (y: number) => {
+        const fraction = Math.min(1, Math.max(0, (y - 3) / 10));
+        return ((heroTop + 160 + fraction * Math.max(0, visibleHeight - 260)) / documentHeight) * 100;
+      };
+      for (const entity of pop) {
+        if (entity.homeDistrict !== 0) continue;
+        entity.docY = projectHeroY(entity.docY);
+        entity.targetDocY = projectHeroY(entity.targetDocY);
+        entity.waypoints = entity.waypoints.map(point => ({ ...point, y: projectHeroY(point.y) }));
+      }
+    }
     entitiesRef.current = pop;
     const frame = requestAnimationFrame(() => setEntities(pop));
     return () => cancelAnimationFrame(frame);
@@ -284,8 +336,7 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
   // Click handler to select a hero and optionally begin a manual player-vs-AI matchup.
   const handleSelectStickMan = useCallback(
     (element: ElementType, id: string, selectedAt: number) => {
-      onStickManSelect(element);
-      setActiveDialogueId(id);
+      setActiveDialogueId(null);
       const entity = entitiesRef.current.find((e) => e.id === id);
       if (entity) {
         // Ensure stopped and waiting for 3 seconds
@@ -322,7 +373,7 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
 
       }
     },
-    [onStickManSelect, onStickManWhisper, matchup, activeFight, handleStopStickMan]
+    [onStickManWhisper, matchup, activeFight, handleStopStickMan]
   );
 
   const restoreFightEntities = useCallback(() => {
@@ -352,9 +403,11 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
     [matchup]
   );
 
-  // Trigger 3D Magic Spell upon selection from double-tap menu
+  // Trigger 3D magic from the single-tap spell menu
   const handleCastSpell = useCallback(
     (entity: StickManEntity, spell: ElementalSpell) => {
+      clearPendingFight();
+      setActiveDialogueId(null);
       if (spellActionsRef.current.isSilenced(entity.id)) {
         onStickManWhisper(entity.element, 'The void is suppressing my magic…');
         return;
@@ -396,7 +449,7 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
         );
       }
     },
-    [onStickManSelect, onStickManWhisper]
+    [onStickManSelect, onStickManWhisper, clearPendingFight]
   );
 
   // Ground click command: sends active companion stick man to clicked point
@@ -507,8 +560,11 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
       getSpellPreviewCatalog?: () => Array<{ id: string; duration: number; keyframes: number[]; headings: number[] }>;
       getActiveSpellCount?: () => number;
       getSpellPreviewState?: () => SpellPreviewState | null;
+      setCharacterPalettePreview?: (lighting: 'world' | 'arena', heading?: number) => Array<{ element: ElementType; name: string; color: string; x: number; y: number }>;
+
     };
     let previewPaused = false;
+    let palettePreviewActive = false;
     let previewActorId: string | null = null;
     let previewTargetId: string | null = null;
     let previewState: SpellPreviewState | null = null;
@@ -573,7 +629,16 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
         actor.group.position.set(-35 + (fixture.docX - 50) * winWidth / 100, -35 - (fixture.docY - 50) * winHeight * 2 / 100 + (pose?.lift || 0), 0);
         actor.group.rotation.set(0.44, fixture.headingAngle, 0);
         actor.bodyGroup.scale.setScalar(pose?.scale ?? 1);
+        updateArchangelMichael(actor, pose?.archangelTime ?? 0, elapsed);
+        updateHealingPower(actor, elapsed);
+        updateSpacePower(actor, elapsed, Boolean(pose?.shielded));
+        updateFallenLucifer(actor, pose?.demonTime ?? 0, elapsed);
         if (pose) applySpellPose(actor, pose, elapsed);
+        actor.headElementGroup.userData.updateSoil?.(elapsed);
+        actor.headElementGroup.userData.updateTrees?.(elapsed);
+        actor.bodyElementGroup.userData.updateTrees?.(elapsed);
+        actor.headElementGroup.userData.updateDark?.(elapsed);
+        actor.bodyElementGroup.userData.updateDark?.(elapsed);
         updateHandMagicSeal(
           actor.handMagicSeal,
           Boolean(pose?.casting),
@@ -593,6 +658,8 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
             );
             targetActor.group.rotation.set(0.44, fixture.headingAngle + Math.PI, 0);
             targetActor.bodyGroup.scale.setScalar(targetPose?.scale ?? 1);
+            updateArchangelMichael(targetActor, targetPose?.archangelTime ?? 0, elapsed);
+            updateFallenLucifer(targetActor, targetPose?.demonTime ?? 0, elapsed);
             if (targetPose) applySpellPose(targetActor, targetPose, elapsed);
           }
         }
@@ -623,6 +690,46 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
     });
 
     // ── 4. Resize Handler ────────────────────────────────────────────
+    // Palette QA uses the production models and the world/arena light rigs.
+    if (new URLSearchParams(window.location.search).has('characterPalette')) {
+      previewApi.setCharacterPalettePreview = (lighting, heading = 0) => {
+        palettePreviewActive = true;
+        previewPaused = true;
+        document.body.classList.add('spell-preview-mode');
+        spellSystem.dispose();
+        for (const character of map3D.values()) character.group.visible = false;
+        ambLight.intensity = lighting === 'arena' ? 1.35 : 1.2;
+        hemiLight.intensity = lighting === 'arena' ? 0 : 1;
+        dirLight.intensity = lighting === 'arena' ? 1.8 : 1.2;
+        dirLight.color.set(lighting === 'arena' ? 0xfff1d6 : 0xfffaea);
+        dirLight.position.set(200, lighting === 'arena' ? 300 : 400, lighting === 'arena' ? 250 : 300);
+        activePointLight.intensity = 0;
+        const columns = winWidth < 700 ? 2 : 7;
+        const rows = Math.ceil(14 / columns), cellWidth = winWidth / columns, cellHeight = winHeight / rows;
+        const scale = Math.min(cellWidth * .65, cellHeight * .5);
+        const result = Object.values(STICK_MAN_ARCHETYPES).map((definition, index) => {
+          const entity = entitiesRef.current.find(candidate => candidate.element === definition.id)!;
+          const character = map3D.get(entity.id)!;
+          const x = (index % columns + .5) * cellWidth, y = (Math.floor(index / columns) + 1) * cellHeight - cellHeight * .25;
+          character.group.visible = true;
+          character.group.position.set(x - winWidth / 2, winHeight / 2 - y, 0);
+          character.group.rotation.set(lighting === 'arena' ? .08 : .44, heading, 0);
+          character.group.scale.setScalar(scale);
+          character.bodyGroup.position.set(0, .55, 0);
+          character.bodyGroup.rotation.set(0, 0, 0);
+          character.bodyGroup.scale.setScalar(1);
+          for (const leg of [character.leftLeg, character.rightLeg]) {
+            leg.hip.rotation.set(0, 0, 0); leg.knee.rotation.set(0, 0, 0);
+          }
+          character.handMagicSeal.visible = false;
+          const material = character.headMesh.material as THREE.MeshStandardMaterial;
+          return { element: definition.id, name: definition.name, color: `#${material.color.getHexString()}`, x, y };
+        });
+        renderer.render(scene, camera);
+        return result;
+      };
+    }
+
     const handleResize = () => {
       winWidth = window.innerWidth;
       winHeight = window.innerHeight;
@@ -670,6 +777,8 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
       const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
       const deltaScrollY = scrollY - lastScrollY;
       lastScrollY = scrollY;
+
+      if (palettePreviewActive) { renderer.render(scene, camera); return; }
 
       // Update active realm point light color
       const currentDef =
@@ -815,7 +924,7 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
             }
 
             // Fast combat magic seal acceleration
-            char3D.magicSealMesh.rotation.z += deltaSec * 2.8;
+            if (entity.element !== 'healing' && entity.element !== 'time' && entity.element !== 'space') char3D.magicSealMesh.rotation.z += deltaSec * 2.8;
 
             if (phase === 'challenge') {
               // Standoff combat stance: knees bent, staff raised, tense anticipation
@@ -1075,10 +1184,10 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
           timeGear.rotation.z += deltaSec * 1.2;
         }
 
-        char3D.bodyElementGroup.rotation.y -= deltaSec * 1.1;
+        if (entity.element !== 'healing' && entity.element !== 'soil' && entity.element !== 'trees' && entity.element !== 'dark' && entity.element !== 'time' && entity.element !== 'space') char3D.bodyElementGroup.rotation.y -= deltaSec * 1.1;
 
         // Magic seal rotation on ground
-        char3D.magicSealMesh.rotation.z += deltaSec * 0.6;
+        if (entity.element !== 'healing' && entity.element !== 'time' && entity.element !== 'space') char3D.magicSealMesh.rotation.z += deltaSec * 0.6;
 
         if (char3D.castAnimationTime > 0) {
           char3D.castAnimationTime = Math.max(0, char3D.castAnimationTime - deltaSec);
@@ -1086,6 +1195,16 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
 
         }
 
+        char3D.headElementGroup.userData.updateSoil?.(timeSec);
+        char3D.headElementGroup.userData.updateTrees?.(timeSec);
+        char3D.bodyElementGroup.userData.updateTrees?.(timeSec);
+        char3D.headElementGroup.userData.updateDark?.(timeSec);
+        char3D.bodyElementGroup.userData.updateDark?.(timeSec);
+        updateHealingPower(char3D, timeSec);
+        updateTimePower(char3D, timeSec, Boolean(spellPose?.shielded));
+        updateSpacePower(char3D, timeSec, Boolean(spellPose?.shielded));
+        updateArchangelMichael(char3D, spellPose?.archangelTime ?? 0, timeSec);
+        updateFallenLucifer(char3D, spellPose?.demonTime ?? 0, timeSec);
         if (spellPose) applySpellPose(char3D, spellPose, timeSec);
 
         const duelCast = entity.state === 'dueling'
@@ -1148,6 +1267,7 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
       spellSystem.dispose();
       spellActions.dispose();
       spellSystemRef.current = null;
+      delete previewApi.setCharacterPalettePreview;
       delete previewApi.setSpellPreviewFrame;
       delete previewApi.castSpellPreview;
       delete previewApi.getSpellPreviewCatalog;
@@ -1175,6 +1295,7 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
         activeRealm={activeRealm}
         activeDialogueId={activeDialogueId}
         onSelectStickMan={handleSelectStickMan}
+        onSelectElement={onStickManSelect}
         onDismissDialogue={() => setActiveDialogueId(null)}
         onCastSpell={handleCastSpell}
         onStopStickMan={handleStopStickMan}

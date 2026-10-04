@@ -1,6 +1,14 @@
+import { createHealingPalm } from './healingVitality';
+import { createRobotPalm } from './robotHardware';
+import { createTimePalm } from './timeChronology';
+import { createSpacePalm } from './spaceCosmos';
+import { createLightPalm } from './lightRadiance';
+import { createDarkPalm } from './darkNature';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ElementType } from '../types';
+import { createMineralPalm } from './soilStone';
+import { createTreePalm } from './treeNature';
 
 export type MagicSealShape = 'triangle'|'ellipseH'|'hexagon'|'pentagon'|'squareTilt'|'star5'|'star6'|'brokenArc'|'star8'|'cross'|'ellipseV'|'diamond'|'octagon'|'circle';
 export type MagicRuneFamily = 'flame'|'wave'|'shard'|'gust'|'stone'|'bloom'|'bolt'|'shadow'|'halo'|'mend'|'void'|'orbit'|'time'|'circuit';
@@ -70,13 +78,13 @@ function sealShapePaths(shape:MagicSealShape,outerR=86,innerR=68):ShapeStroke[]{
 
 /** Curves mirror runePath from SpiritMagicSeal; even/odd variants are retained. */
 function runePaths(f:MagicRuneFamily,i:number):StrokePath[]{switch(f){
-  case'flame':return i%2===0?[{points:quadratic([-7,6],[0,-9],[7,6])}]:[{points:quadratic([-6,5],[0,-5],[6,5])},{points:[[0,-5],[0,8]]}];
-  case'wave':return i%2===0?[{points:join(quadratic([-8,-1],[-4,-6],[0,-1]),quadratic([0,-1],[4,4],[8,-1]))}]:[{points:join(quadratic([-8,3],[-4,-2],[0,3]),quadratic([0,3],[4,8],[8,3]))}];
-  case'shard':return[{points:[[0,-8],[7,4],[-7,4]],closed:true},{points:[[0,-8],[0,7]]}];
-  case'gust':return i%2===0?[{points:quadratic([-7,-3],[0,-8],[7,-3])},{points:quadratic([-7,3],[0,8],[7,3])}]:[{points:[[-8,0],[8,0]]},{points:[[-3,-5],[3,5]]}];
-  case'stone':return[{points:[[-7,-6],[7,-6],[6,6],[-6,6]],closed:true},{points:[[-7,0],[7,0]]}];
+  case'flame':return[{points:join(quadratic([0,-9],[9,-1],[5,5]),quadratic([5,5],[0,11],[-5,5]),quadratic([-5,5],[-9,0],[-3,-3]),quadratic([-3,-3],[1,3],[0,-9]))},{points:i%2===0?quadratic([0,6],[-3,2],[1,-2]):quadratic([0,6],[4,2],[1,-2])}];
+  case'wave':return[{points:join(quadratic([-8,5],[-2,5],[-2,-1]),quadratic([-2,-1],[1,-10],[7,-3]),quadratic([7,-3],[0,-5],[2,3]))},{points:i%2===0?quadratic([-8,8],[0,4],[8,8]):quadratic([-7,9],[0,7],[7,9])}];
+  case'shard':return Array.from({length:6},(_,i):StrokePath[]=>{const a=i*Math.PI/3,c=Math.cos(a),s=Math.sin(a);return [{points:[[0,0],[c*8,s*8]]},{points:[[c*4,s*4],[c*6-s*2,s*6+c*2]]},{points:[[c*4,s*4],[c*6+s*2,s*6-c*2]]}];}).flat();
+  case'gust':return[{points:join(quadratic([-8,-3],[2,-8],[7,-3]),quadratic([7,-3],[10,3],[3,4]))},{points:quadratic([-8,2],[-1,-1],[5,2])},{points:i%2===0?quadratic([-6,7],[1,3],[6,6]):quadratic([-6,7],[0,9],[6,6])}];
+  case'stone':return[{points:[[-7,-6],[6,-6],[8,-1],[5,6],[-6,5],[-8,0]],closed:true},{points:[[-7,-1],[0,0],[6,-2]]},{points:[[-6,3],[1,2],[5,3]]}];
   case'bloom':return[{points:join(quadratic([0,-8],[6,-2],[0,4]),quadratic([0,4],[-6,-2],[0,-8])),closed:true},{points:[[-7,1],[7,1]]}];
-  case'bolt':return[{points:[[-6,-8],[1,-1],[-2,-1],[6,8],[0,1],[3,1]],closed:true}];
+  case'bolt':return[{points:[[-2,-9],[2,-3],[-1,0],[4,8]]},{points:[[-1,0],[-7,-2],[-8,3]]},{points:[[2,-3],[7,-6],[8,-3]]}];
   case'shadow':return i%2===0?[{points:ellipse(7,7),closed:true},{points:ellipse(4,4).map(([x,y])=>[x+3,y]),closed:true}]:[{points:quadratic([-7,-2],[0,8],[7,-2])}];
   case'halo':return[{points:[[0,-8],[0,8]]},{points:[[-8,0],[8,0]]},{points:[[-5,-5],[5,5]]},{points:[[5,-5],[-5,5]]}];
   case'mend':return[{points:[[-8,0],[8,0]]},{points:[[0,-8],[0,8]]},{points:quadratic([-5,-5],[0,-8],[5,-5])}];
@@ -87,6 +95,13 @@ function runePaths(f:MagicRuneFamily,i:number):StrokePath[]{switch(f){
 }}
 
 type TextureLayer='aura'|'shape'|'outerRunes'|'innerRunes';
+function rimGlyph(shape:MagicSealShape,index:number,count:number,radius:number){
+  const path=sealShapePaths(shape,radius,radius*.78)[0],points=path.closed?[...path.points,path.points[0]]:path.points;
+  const f=index/count*(points.length-1),a=points[Math.floor(f)],b=points[Math.min(points.length-1,Math.floor(f)+1)],p=f-Math.floor(f);
+  const x=a[0]+(b[0]-a[0])*p,y=a[1]+(b[1]-a[1])*p;
+  return {point:[x,y] as Point,rotation:Math.atan2(y,x)+Math.PI/2};
+}
+function glyphCount(shape:MagicSealShape){return shape==='triangle'?9:shape==='octagon'?8:shape==='hexagon'||shape==='star6'?12:shape==='star5'||shape==='pentagon'?10:shape==='cross'?8:14}
 const layerTextureCache=new Map<string,THREE.CanvasTexture>();
 function drawCanvasPath(ctx:CanvasRenderingContext2D,path:StrokePath,color:string,width:number,dash:number[]=[]){
   if(path.points.length<2)return;ctx.beginPath();ctx.moveTo(path.points[0][0],path.points[0][1]);for(const [x,y] of path.points.slice(1))ctx.lineTo(x,y);if(path.closed)ctx.closePath();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();ctx.setLineDash([]);
@@ -98,12 +113,12 @@ function spiritLayerTexture(layer:TextureLayer,profile:MagicSealProfile,primary:
   const scale=256/220;ctx.scale(scale,scale);ctx.translate(110,110);ctx.shadowBlur=6;ctx.globalCompositeOperation='lighter';
   if(layer==='aura'){
     const glow=ctx.createRadialGradient(0,0,0,0,0,78);glow.addColorStop(0,`${secondary}66`);glow.addColorStop(.42,`${primary}33`);glow.addColorStop(.72,'transparent');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,78,0,Math.PI*2);ctx.fill();
-    ctx.globalAlpha=.34;ctx.lineWidth=12;ctx.lineCap='butt';for(const [start,end] of arcs(profile.ringMode)){ctx.beginPath();ctx.strokeStyle=(start/30)%2>=1?secondary:primary;ctx.arc(0,0,78,start*Math.PI/180,end*Math.PI/180);ctx.stroke()}ctx.globalAlpha=1;
+    ctx.globalAlpha=.24;for(const path of sealShapePaths(profile.shape,91,74).filter(path=>path.layer==='outer'))drawCanvasPath(ctx,path,primary,4);ctx.globalAlpha=1;
   }else if(layer==='shape'){
     for(const path of sealShapePaths(profile.shape)){const color=path.layer==='outer'?primary:secondary,width=(path.layer==='outer'?2:1.8)*(path.width??1),dash=path.dashed==='outer'?profile.outerDash:path.dashed==='inner'?profile.innerDash:[];ctx.shadowColor=color;drawCanvasPath(ctx,path,color,width,dash)}
   }else{
-    const outerLayer=layer==='outerRunes',count=outerLayer?18:24,radius=outerLayer?100:58,width=outerLayer?1.9:1.5;
-    for(let i=0;i<count;i++){ctx.save();ctx.rotate(i*Math.PI*2/count);ctx.translate(0,-radius);const color=i%2===0?(outerLayer?primary:secondary):(outerLayer?secondary:primary);ctx.shadowColor=color;ctx.globalAlpha=outerLayer?.92:.84;for(const path of runePaths(profile.rune,outerLayer?i:i+1))drawCanvasPath(ctx,path,color,width);ctx.restore()}ctx.globalAlpha=1;
+    const outerLayer=layer==='outerRunes',count=outerLayer?glyphCount(profile.shape):6,radius=outerLayer?99:55,width=outerLayer?1.6:1.3;
+    for(let i=0;i<count;i++){const rim=rimGlyph(profile.shape,i,count,radius);ctx.save();ctx.translate(...rim.point);ctx.rotate(rim.rotation);const color=i%2===0?(outerLayer?primary:secondary):(outerLayer?secondary:primary);ctx.shadowColor=color;ctx.globalAlpha=outerLayer?.8:.6;for(const path of runePaths(profile.rune,outerLayer?i:i+1))drawCanvasPath(ctx,path,color,width);ctx.restore()}ctx.globalAlpha=1;
   }
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.minFilter=THREE.LinearFilter;texture.magFilter=THREE.LinearFilter;texture.generateMipmaps=false;texture.needsUpdate=true;layerTextureCache.set(cacheKey,texture);return texture;
 }
@@ -142,16 +157,28 @@ function mergeLayer(group:THREE.Group){
 
 /** Spirit World artwork rebuilt as actual tubes, toruses, spheres, and depth. */
 export function createHandMagicSeal(element:ElementType,primary:string,secondary:string,facingTarget:THREE.Object3D):THREE.Group{
+  if(element==='healing')return createHealingPalm(facingTarget);
+  if(element==='time')return createTimePalm(facingTarget);
+  if(element==='robot')return createRobotPalm(facingTarget);
+  if(element==='space')return createSpacePalm(facingTarget);
+  if(element==='light')return createLightPalm(facingTarget);
+  if(element==='soil')return createMineralPalm(facingTarget);
+  if(element==='trees')return createTreePalm(facingTarget);
+  if(element==='dark')return createDarkPalm(facingTarget);
   const profile=MAGIC_SEAL_PROFILES[element],root=new THREE.Group();root.name=`hand-magic-seal-${element}`;root.visible=false;root.renderOrder=40;
   const aura=new THREE.Group(),outer=new THREE.Group(),inner=new THREE.Group(),shapeFace=new THREE.Group(),outerRunes=new THREE.Group(),innerRunes=new THREE.Group(),core=new THREE.Group(),release=new THREE.Group();
   aura.name='seal-aura';outer.name='seal-outer-depth';inner.name='seal-inner-depth';shapeFace.name='seal-source-shape';outerRunes.name='seal-outer-runes';innerRunes.name='seal-inner-runes';core.name='seal-core';release.name='seal-release';root.add(aura,outer,inner,shapeFace,outerRunes,innerRunes,core,release);
   const primaryMat=material(primary),secondaryMat=material(secondary),whiteMat=material(0xffffff),auraMat=material(secondary),releaseMat=material(primary),materials=[primaryMat,secondaryMat,whiteMat,auraMat,releaseMat];
   arcs(profile.ringMode).forEach(([start,end],i)=>addStroke(aura,{points:ellipse(78,78,start*Math.PI/180,end*Math.PI/180,Math.max(6,Math.ceil((end-start)/5)))},i%2?secondaryMat:primaryMat,.012));
   for(const path of sealShapePaths(profile.shape)){const mat=path.layer==='outer'?primaryMat:secondaryMat,radius=(path.layer==='outer'?.011:.0085)*(path.width??1),dash=path.dashed==='outer'?profile.outerDash:path.dashed==='inner'?profile.innerDash:undefined;addStroke(path.layer==='outer'?outer:inner,path,mat,radius,dash)}
-  for(let i=0;i<18;i++){const angle=i*Math.PI*2/18,mat=i%2===0?primaryMat:secondaryMat;for(const path of runePaths(profile.rune,i))addStroke(outerRunes,path,mat,.0085,undefined,[0,-100],angle)}
-  for(let i=0;i<24;i++){const angle=i*Math.PI*2/24,mat=i%2===0?secondaryMat:primaryMat;for(const path of runePaths(profile.rune,i+1))addStroke(innerRunes,path,mat,.0065,undefined,[0,-58],angle)}
-  const sphere=new THREE.Mesh(new THREE.SphereGeometry(.082,18,12),whiteMat),halo=new THREE.Mesh(new THREE.TorusGeometry(.13,.012,7,40),secondaryMat);sphere.scale.z=.56;core.add(sphere,halo);release.add(new THREE.Mesh(new THREE.TorusGeometry(.14,.012,7,48),releaseMat));
-  for(const z of[-.035,.035]){const rail=new THREE.Mesh(new THREE.TorusGeometry(.69,.012,6,72),z<0?secondaryMat:primaryMat);rail.position.z=z;aura.add(rail)}
+  const count=glyphCount(profile.shape);
+  for(let i=0;i<count;i++){const rim=rimGlyph(profile.shape,i,count,99),mat=i%2===0?primaryMat:secondaryMat;for(const path of runePaths(profile.rune,i))addStroke(outerRunes,path,mat,.0085,undefined,rim.point,rim.rotation)}
+  for(let i=0;i<6;i++){const rim=rimGlyph(profile.shape,i,6,55),mat=i%2===0?secondaryMat:primaryMat;for(const path of runePaths(profile.rune,i+1))addStroke(innerRunes,path,mat,.0065,undefined,rim.point,rim.rotation)}
+  const sphere=new THREE.Mesh(new THREE.SphereGeometry(.032,12,8),whiteMat);sphere.scale.z=.56;core.add(sphere);
+  for(const path of runePaths(profile.rune,0))addStroke(core,{...path,points:path.points.map(([x,y])=>[x*3.1,y*3.1])},secondaryMat,.016);
+  release.add(new THREE.Mesh(new THREE.TorusGeometry(.14,.008,6,40),releaseMat));
+  for(const z of[-.035,.035]){const rail=new THREE.Group();rail.position.z=z;aura.add(rail);for(const path of sealShapePaths(profile.shape,87,70).filter(path=>path.layer==='outer'))addStroke(rail,path,z<0?secondaryMat:primaryMat,.009)}
+  // Keep a clock's circular mechanism; other schools retain their own outline.
   for(let i=0;i<12;i++){const angle=i*Math.PI*2/12,pillar=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.07,5),i%2?secondaryMat:primaryMat);pillar.rotation.x=Math.PI/2;pillar.position.set(Math.cos(angle)*.69,Math.sin(angle)*.69,0);aura.add(pillar)}
   [aura,outer,inner,outerRunes,innerRunes,core,release].forEach(mergeLayer);
   const faceMaterials:THREE.MeshBasicMaterial[]=[];
@@ -172,13 +199,68 @@ function ensureSpiritFaces(seal:{profile:MagicSealProfile;primary:string;seconda
 
 /** Locks the seal center to the palm and points its physical front face toward the caster. */
 export function updateHandMagicSeal(root:THREE.Group,active:boolean,time:number,delta:number,intensity=1):void{
+  const chrono=root.userData.timeSeal;
+  if(chrono){
+    chrono.activation=THREE.MathUtils.lerp(chrono.activation,active?1:0,1-Math.exp(-delta*(active?18:11)));
+    root.visible=chrono.activation>.012;if(!root.visible)return;
+    if(root.parent){root.parent.updateWorldMatrix(true,false);root.parent.getWorldQuaternion(parentQuaternion);root.quaternion.copy(parentQuaternion).invert();}
+    root.scale.setScalar((.65+chrono.activation*.35)*Math.max(.9,intensity));
+    root.traverse(node=>{if(node instanceof THREE.Mesh && node.material instanceof THREE.MeshBasicMaterial){const m=node.material;m.userData.timeOpacity ??= m.opacity;m.opacity=m.userData.timeOpacity*chrono.activation;}});
+    chrono.update(time);return;
+  }
+  const cosmos=(root.userData.healingSeal ?? root.userData.robotSeal ?? root.userData.spaceSeal) as {facingTarget:THREE.Object3D;activation:number;update:(time:number,opacity:number)=>void}|undefined;
+  if(cosmos){
+    cosmos.activation=THREE.MathUtils.lerp(cosmos.activation,active?1:0,1-Math.exp(-delta*(active?18:11)));
+    root.visible=cosmos.activation>.012;if(!root.visible)return;
+    if(root.parent){root.parent.updateWorldMatrix(true,false);cosmos.facingTarget.updateWorldMatrix(true,false);root.parent.getWorldPosition(handPosition);cosmos.facingTarget.getWorldPosition(targetPosition);direction.subVectors(targetPosition,handPosition).normalize().multiplyScalar(.72).addScaledVector(cameraFacing,.7).normalize();xAxis.crossVectors(sealUp,direction).normalize();if(xAxis.lengthSq()<.001)xAxis.set(1,0,0);yAxis.crossVectors(direction,xAxis).normalize();basis.makeBasis(xAxis,yAxis,direction);worldQuaternion.setFromRotationMatrix(basis);root.parent.getWorldQuaternion(parentQuaternion);root.quaternion.copy(parentQuaternion).invert().multiply(worldQuaternion)}
+    root.scale.setScalar((.65+cosmos.activation*.35)*Math.max(.9,intensity));
+    cosmos.update(time,cosmos.activation);return;
+  }
+  const light=root.userData.lightSeal as {facingTarget:THREE.Object3D;activation:number;update:(time:number,opacity:number)=>void}|undefined;
+  if(light){
+    light.activation=THREE.MathUtils.lerp(light.activation,active?1:0,1-Math.exp(-delta*(active?18:11)));
+    root.visible=light.activation>.012;if(!root.visible)return;
+    if(root.parent){root.parent.updateWorldMatrix(true,false);light.facingTarget.updateWorldMatrix(true,false);root.parent.getWorldPosition(handPosition);light.facingTarget.getWorldPosition(targetPosition);direction.subVectors(targetPosition,handPosition).normalize().multiplyScalar(.72).addScaledVector(cameraFacing,.7).normalize();xAxis.crossVectors(sealUp,direction).normalize();if(xAxis.lengthSq()<.001)xAxis.set(1,0,0);yAxis.crossVectors(direction,xAxis).normalize();basis.makeBasis(xAxis,yAxis,direction);worldQuaternion.setFromRotationMatrix(basis);root.parent.getWorldQuaternion(parentQuaternion);root.quaternion.copy(parentQuaternion).invert().multiply(worldQuaternion)}
+    root.scale.setScalar((.6+light.activation*.4)*Math.max(.9,intensity));
+    light.update(time,light.activation);return;
+  }
+  const shade=root.userData.darkSeal as {facingTarget:THREE.Object3D;materials:THREE.ShaderMaterial[];hand:{update:(grip:number)=>void};activation:number}|undefined;
+  if(shade){
+    shade.activation=THREE.MathUtils.lerp(shade.activation,active?1:0,1-Math.exp(-delta*(active?18:11)));
+    root.visible=shade.activation>.012;if(!root.visible)return;
+    if(root.parent){root.parent.updateWorldMatrix(true,false);shade.facingTarget.updateWorldMatrix(true,false);root.parent.getWorldPosition(handPosition);shade.facingTarget.getWorldPosition(targetPosition);direction.subVectors(targetPosition,handPosition).normalize().multiplyScalar(.72).addScaledVector(cameraFacing,.7).normalize();xAxis.crossVectors(sealUp,direction).normalize();if(xAxis.lengthSq()<.001)xAxis.set(1,0,0);yAxis.crossVectors(direction,xAxis).normalize();basis.makeBasis(xAxis,yAxis,direction);worldQuaternion.setFromRotationMatrix(basis);root.parent.getWorldQuaternion(parentQuaternion);root.quaternion.copy(parentQuaternion).invert().multiply(worldQuaternion)}
+    root.scale.setScalar((.65+shade.activation*.35)*Math.max(.9,intensity));
+    shade.hand.update(.2 + shade.activation * .6);
+    shade.materials.forEach(material=>{material.uniforms.uTime.value=time;material.uniforms.uOpacity.value=shade.activation;});
+    return;
+  }
+  const tree=root.userData.treeSeal as {facingTarget:THREE.Object3D;materials:THREE.ShaderMaterial[];shoots:Array<{update:(growth:number)=>void}>;activation:number}|undefined;
+  if(tree){
+    tree.activation=THREE.MathUtils.lerp(tree.activation,active?1:0,1-Math.exp(-delta*(active?18:11)));
+    root.visible=tree.activation>.012;if(!root.visible)return;
+    if(root.parent){root.parent.updateWorldMatrix(true,false);tree.facingTarget.updateWorldMatrix(true,false);root.parent.getWorldPosition(handPosition);tree.facingTarget.getWorldPosition(targetPosition);direction.subVectors(targetPosition,handPosition).normalize().multiplyScalar(.72).addScaledVector(cameraFacing,.7).normalize();xAxis.crossVectors(sealUp,direction).normalize();if(xAxis.lengthSq()<.001)xAxis.set(1,0,0);yAxis.crossVectors(direction,xAxis).normalize();basis.makeBasis(xAxis,yAxis,direction);worldQuaternion.setFromRotationMatrix(basis);root.parent.getWorldQuaternion(parentQuaternion);root.quaternion.copy(parentQuaternion).invert().multiply(worldQuaternion)}
+    root.scale.setScalar((.65+tree.activation*.35)*Math.max(.9,intensity));
+    tree.shoots.forEach(shoot=>shoot.update(tree.activation));
+    tree.materials.forEach(material=>{material.uniforms.uTime.value=time;material.uniforms.uOpacity.value=tree.activation;});
+    return;
+  }
+  const mineral=root.userData.mineralSeal as {facingTarget:THREE.Object3D;materials:THREE.ShaderMaterial[];fragments:THREE.Mesh[];activation:number}|undefined;
+  if(mineral){
+    mineral.activation=THREE.MathUtils.lerp(mineral.activation,active?1:0,1-Math.exp(-delta*(active?18:11)));
+    root.visible=mineral.activation>.012;if(!root.visible)return;
+    if(root.parent){root.parent.updateWorldMatrix(true,false);mineral.facingTarget.updateWorldMatrix(true,false);root.parent.getWorldPosition(handPosition);mineral.facingTarget.getWorldPosition(targetPosition);direction.subVectors(targetPosition,handPosition).normalize().multiplyScalar(.72).addScaledVector(cameraFacing,.7).normalize();xAxis.crossVectors(sealUp,direction).normalize();if(xAxis.lengthSq()<.001)xAxis.set(1,0,0);yAxis.crossVectors(direction,xAxis).normalize();basis.makeBasis(xAxis,yAxis,direction);worldQuaternion.setFromRotationMatrix(basis);root.parent.getWorldQuaternion(parentQuaternion);root.quaternion.copy(parentQuaternion).invert().multiply(worldQuaternion)}
+    root.scale.setScalar((.7+mineral.activation*.3)*Math.max(.9,intensity));
+    mineral.fragments.forEach((fragment,i)=>{const a=i*Math.PI/4,r=.22+(1-mineral.activation)*.1;fragment.position.set(Math.sin(a)*r,Math.cos(a)*r,Math.sin(time*2+i)*.008);});
+    mineral.materials.forEach(material=>{material.uniforms.uOpacity.value=mineral.activation;});
+    return;
+  }
   const seal=root.userData.seal as {profile:MagicSealProfile;primary:string;secondary:string;facingTarget:THREE.Object3D;aura:THREE.Group;outer:THREE.Group;inner:THREE.Group;shapeFace:THREE.Group;outerRunes:THREE.Group;innerRunes:THREE.Group;core:THREE.Group;release:THREE.Group;materials:THREE.MeshStandardMaterial[];faceMaterials:THREE.MeshBasicMaterial[];facesReady:boolean;activation:number}|undefined;if(!seal)return;
   if(active)ensureSpiritFaces(seal);
   seal.activation=THREE.MathUtils.lerp(seal.activation,active?1:0,1-Math.exp(-delta*(active?18:11)));root.visible=seal.activation>.012;if(!root.visible)return;
   root.position.set(0,0,0);
   if(root.parent){root.parent.updateWorldMatrix(true,false);seal.facingTarget.updateWorldMatrix(true,false);root.parent.getWorldPosition(handPosition);seal.facingTarget.getWorldPosition(targetPosition);direction.subVectors(targetPosition,handPosition).normalize();direction.multiplyScalar(.72).addScaledVector(cameraFacing,.7).normalize();xAxis.crossVectors(sealUp,direction).normalize();if(xAxis.lengthSq()<.001)xAxis.set(1,0,0);yAxis.crossVectors(direction,xAxis).normalize();basis.makeBasis(xAxis,yAxis,direction);worldQuaternion.setFromRotationMatrix(basis);root.parent.getWorldQuaternion(parentQuaternion);root.quaternion.copy(parentQuaternion).invert().multiply(worldQuaternion)}
-  const pulse=1+Math.sin(time*4.2)*.035;root.scale.setScalar(.88*(.82+seal.activation*.18)*pulse*Math.max(.9,intensity));
+  const pulse=1+Math.sin(time*4.2)*.035;root.scale.setScalar(.74*(.82+seal.activation*.18)*pulse*Math.max(.9,intensity));
   const innerRotation=rotation(time,seal.profile.innerSeconds,seal.profile.innerDirection);seal.outer.rotation.z=innerRotation;seal.inner.rotation.z=innerRotation;seal.shapeFace.rotation.z=innerRotation;seal.aura.rotation.z=rotation(time,seal.profile.outerSeconds,seal.profile.outerDirection);seal.outerRunes.rotation.z=rotation(time,seal.profile.glyphSeconds,-seal.profile.outerDirection as 1|-1);seal.innerRunes.rotation.z=rotation(time,seal.profile.glyphSeconds*.9,seal.profile.innerDirection);seal.core.scale.setScalar(.82+Math.sin(time*Math.PI*1.25)*.16);
-  const releaseProgress=(time*.95)%1;seal.release.scale.setScalar(.4+releaseProgress*(seal.profile.releaseScale-.4));seal.materials.forEach((mat,i)=>{mat.opacity=seal.activation*(i===3?.08:i===4?(1-releaseProgress)*.52:i===2?.72:.24)});seal.faceMaterials.forEach((mat,i)=>{mat.opacity=seal.activation*(i===0?.72:.98)});
+  const releaseProgress=(time*.95)%1;seal.release.scale.setScalar(.4+releaseProgress*(seal.profile.releaseScale-.4));seal.materials.forEach((mat,i)=>{mat.opacity=seal.activation*(i===3?.08:i===4?(1-releaseProgress)*.3:i===2?.55:.28)});seal.faceMaterials.forEach((mat,i)=>{mat.opacity=seal.activation*(i===0?.4:i===1?.82:.58)});
 }
 function rotation(time:number,seconds:number,direction:1|-1){return direction*time*Math.PI*2/seconds}

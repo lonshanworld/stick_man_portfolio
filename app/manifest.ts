@@ -8,14 +8,14 @@ export default function manifest(): MetadataRoute.Manifest {
       'The portfolio of Lon Shan, a full-stack and mobile software engineer building interactive digital products.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#050711',
-    theme_color: '#050711',
+    background_color: '#101016',
+    theme_color: '#101016',
     lang: 'en-US',
     icons: [
       {
-        src: '/favicon.ico',
+        src: '/icon.svg',
         sizes: 'any',
-        type: 'image/x-icon',
+        type: 'image/svg+xml',
       },
     ],
   };

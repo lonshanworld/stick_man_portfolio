@@ -1,4 +1,19 @@
+import { createHealingEmblem, createHealingHeartGeometry, createHealingCrossGeometry } from './healingVitality';
+import { createRobotHardware } from './robotHardware';
+import { createChronometer, createTemporalHourglass } from './timeChronology';
+import { createSpaceCrest, createCosmicLens, createSpaceWard, createCosmicMaterial } from './spaceCosmos';
+import { installFallenLucifer } from './fallenLucifer';
+import { installArchangelMichael } from './archangelMichael';
+import { createLightCorona, createLightRay } from './lightRadiance';
+import { createDarkCrest, createDarkMantle } from './darkNature';
 import * as THREE from 'three';
+import { createFireFlame } from './fireFlame';
+import { createWaterCrown } from './waterMaterials';
+import { createWindCrest } from './windCurrent';
+import { createMineralCrest, createStoneMaterial, createStrataGeometry } from './soilStone';
+import { createTreeCrest, createBarkMaterial, createLeafMaterial, createTreeBranch, createTreeLeafGeometry } from './treeNature';
+import { createIceCrown } from './iceCrystal';
+import { createElectricCrown } from './electricArc';
 import { ElementType, StickMan3DCharacter, StickManMood } from '../types';
 import { STICK_MAN_ARCHETYPES } from '../data/stickManArchetypes';
 import {
@@ -132,550 +147,104 @@ function createHeadElementPower(
 
   switch (element) {
     case 'fire': {
-      // ── 🔥 LITERAL BLAZING FIRE ON HEAD ──
-      // 7 roaring flame tongues rising and curling upward
-      const flameConfigs = [
-        { x: 0, z: -0.02, height: 0.48, radius: 0.065, rotX: -0.22, rotZ: 0, mat: glowMat },
-        { x: -0.08, z: -0.04, height: 0.40, radius: 0.052, rotX: -0.30, rotZ: 0.38, mat: coreMat },
-        { x: 0.08, z: -0.04, height: 0.40, radius: 0.052, rotX: -0.30, rotZ: -0.38, mat: coreMat },
-        { x: -0.14, z: 0.0, height: 0.30, radius: 0.042, rotX: -0.18, rotZ: 0.70, mat: glowMat },
-        { x: 0.14, z: 0.0, height: 0.30, radius: 0.042, rotX: -0.18, rotZ: -0.70, mat: glowMat },
-        { x: 0, z: 0.06, height: 0.32, radius: 0.045, rotX: 0.15, rotZ: 0, mat: glowMat },
-        { x: 0, z: -0.10, height: 0.35, radius: 0.048, rotX: -0.45, rotZ: 0, mat: coreMat },
-      ];
-
-      flameConfigs.forEach((cfg) => {
-        const coneGeo = new THREE.ConeGeometry(cfg.radius, cfg.height, 8);
-        coneGeo.translate(0, cfg.height / 2, 0);
-        const flameMesh = new THREE.Mesh(coneGeo, cfg.mat);
-        flameMesh.position.set(cfg.x, 0.12, cfg.z);
-        flameMesh.rotation.set(cfg.rotX, 0, cfg.rotZ);
-        headFXGroup.add(flameMesh);
-
-        // Blazing incandescent white-hot inner flame core
-        const coreGeo = new THREE.ConeGeometry(cfg.radius * 0.45, cfg.height * 0.55, 6);
-        coreGeo.translate(0, (cfg.height * 0.55) / 2, 0);
-        const coreMesh = new THREE.Mesh(coreGeo, whiteHotMat);
-        coreMesh.position.set(cfg.x, 0.12, cfg.z + 0.01);
-        coreMesh.rotation.set(cfg.rotX, 0, cfg.rotZ);
-        headFXGroup.add(coreMesh);
+      // A swept flame crown, with warm inner tongues instead of rigid white cones.
+      const amber = new THREE.MeshBasicMaterial({ color: 0xffd28a, toneMapped: false });
+      const crownFlames = Array.from({ length: 5 }, (_, i) => {
+        const flame = createFireFlame(.16, .28 + (2 - Math.abs(i - 2)) * .075, i * 3.7);
+        flame.root.position.set((i - 2) * .06, .08, -.025);
+        flame.root.rotation.z = -(i - 2) * .12;
+        headFXGroup.add(flame.root);
+        return flame;
       });
-
-      // 4 rising fire ember motes
-      for (let i = 0; i < 4; i++) {
-        const emberGeo = new THREE.SphereGeometry(0.035, 8, 8);
-        const ember = new THREE.Mesh(emberGeo, glowMat);
-        const ang = (i / 4) * Math.PI * 2;
-        ember.position.set(Math.cos(ang) * 0.18, 0.28 + (i % 2) * 0.12, Math.sin(ang) * 0.18);
+      headFXGroup.userData.updateFire = (time: number) => crownFlames.forEach(flame => flame.update(time));
+      for (let i = 0; i < 6; i++) {
+        const ember = new THREE.Mesh(new THREE.OctahedronGeometry(.012), amber);
+        const angle = i / 6 * Math.PI * 2;
+        ember.position.set(Math.cos(angle) * .16, .22 + (i % 3) * .09, Math.sin(angle) * .16);
         orbitGroup.add(ember);
       }
       break;
     }
 
     case 'water': {
-      // ── 💧 SWIRLING LIQUID WATER VORTEX & SPLASH WAVES ──
-      // Main swirling liquid hydro vortex ring
-      const torusGeo = new THREE.TorusGeometry(0.22, 0.042, 12, 32);
-      torusGeo.rotateX(Math.PI / 2.3);
-      const waterVortex = new THREE.Mesh(torusGeo, coreMat);
-      waterVortex.position.y = 0.16;
-      orbitGroup.add(waterVortex);
-
-      // 3 curved ocean wave splash crests rising from the vortex
-      for (let i = 0; i < 3; i++) {
-        const waveGeo = new THREE.ConeGeometry(0.045, 0.32, 8);
-        waveGeo.scale(0.6, 1.2, 1.6);
-        waveGeo.translate(0, 0.16, 0);
-        const wave = new THREE.Mesh(waveGeo, glowMat);
-        const ang = (i / 3) * Math.PI * 2;
-        wave.position.set(Math.cos(ang) * 0.16, 0.14, Math.sin(ang) * 0.16);
-        wave.rotation.set(-0.35, -ang, 0.4);
-        orbitGroup.add(wave);
-      }
-
-      // 5 liquid water droplet spheres splashing around head
-      for (let i = 0; i < 5; i++) {
-        const dropGeo = new THREE.SphereGeometry(0.05, 12, 12);
-        dropGeo.scale(0.8, 1.3, 0.8);
-        const drop = new THREE.Mesh(dropGeo, glowMat);
-        const ang = (i / 5) * Math.PI * 2 + 0.3;
-        drop.position.set(Math.cos(ang) * 0.24, 0.18 + (i % 2) * 0.14, Math.sin(ang) * 0.24);
-        orbitGroup.add(drop);
-      }
+      const crown = createWaterCrown();
+      headFXGroup.add(crown.root);
+      headFXGroup.userData.updateWater = crown.update;
       break;
     }
 
     case 'lightning': {
-      // ── ⚡ CRACKLING ZIGZAG ELECTRIC LIGHTNING ARCS & SPURTS ──
-      const createJaggedBolt = (angle: number, lengthScale: number) => {
-        const boltGroup = new THREE.Group();
-        boltGroup.rotation.y = angle;
-
-        // Segment 1: projecting out from head
-        const seg1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.15, 0.04), glowMat);
-        seg1.position.set(0.05, 0.08, 0);
-        seg1.rotation.z = -0.7;
-        boltGroup.add(seg1);
-
-        // Segment 2: jagged angle inward
-        const seg2 = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.16 * lengthScale, 0.035), coreMat);
-        seg2.position.set(0.14, 0.18, 0);
-        seg2.rotation.z = 0.65;
-        boltGroup.add(seg2);
-
-        // Segment 3: sharp electric lightning tip pointing up and out
-        const seg3Geo = new THREE.ConeGeometry(0.04, 0.18 * lengthScale, 6);
-        seg3Geo.translate(0, 0.09, 0);
-        const seg3 = new THREE.Mesh(seg3Geo, whiteHotMat);
-        seg3.position.set(0.08, 0.30 * lengthScale, 0);
-        seg3.rotation.z = -0.8;
-        boltGroup.add(seg3);
-
-        return boltGroup;
-      };
-
-      // 4 multi-directional lightning bolts crackling around head
-      headFXGroup.add(createJaggedBolt(-Math.PI / 2.8, 1.1));
-      headFXGroup.add(createJaggedBolt(Math.PI / 2.8, 1.1));
-      headFXGroup.add(createJaggedBolt(-Math.PI * 0.75, 0.9));
-      headFXGroup.add(createJaggedBolt(Math.PI * 0.75, 0.9));
-
-      // Central high-voltage lightning spear needle
-      const needleGeo = new THREE.ConeGeometry(0.04, 0.36, 6);
-      needleGeo.translate(0, 0.18, 0);
-      const needle = new THREE.Mesh(needleGeo, whiteHotMat);
-      needle.position.set(0, 0.14, 0);
-      headFXGroup.add(needle);
+      const corona = createElectricCrown();
+      headFXGroup.add(corona.root);
+      headFXGroup.userData.updateLightning = corona.update;
       break;
     }
 
     case 'ice': {
-      // ── ❄️ FROZEN GLACIAL ICICLES & ICE CRYSTALS ──
-      // 7 sharp crystalline icicle needles protruding in all directions
-      const icicleConfigs = [
-        { x: 0, z: -0.02, height: 0.46, radius: 0.065, rotZ: 0, rotX: -0.15, mat: whiteHotMat },
-        { x: -0.12, z: 0.02, height: 0.38, radius: 0.055, rotZ: 0.55, rotX: -0.1, mat: glowMat },
-        { x: 0.12, z: 0.02, height: 0.38, radius: 0.055, rotZ: -0.55, rotX: -0.1, mat: glowMat },
-        { x: -0.08, z: -0.08, height: 0.34, radius: 0.05, rotZ: 0.35, rotX: -0.45, mat: coreMat },
-        { x: 0.08, z: -0.08, height: 0.34, radius: 0.05, rotZ: -0.35, rotX: -0.45, mat: coreMat },
-        { x: 0, z: 0.08, height: 0.28, radius: 0.045, rotZ: 0, rotX: 0.4, mat: glowMat },
-      ];
-
-      icicleConfigs.forEach((cfg) => {
-        const iceGeo = new THREE.OctahedronGeometry(cfg.radius, 0);
-        iceGeo.scale(0.75, cfg.height * 3.6, 0.75);
-        iceGeo.translate(0, cfg.height / 2, 0);
-        const iceMesh = new THREE.Mesh(iceGeo, cfg.mat);
-        iceMesh.position.set(cfg.x, 0.12, cfg.z);
-        iceMesh.rotation.set(cfg.rotX, 0, cfg.rotZ);
-        headFXGroup.add(iceMesh);
-      });
-
-      // 4 orbiting frost crystals
-      for (let i = 0; i < 4; i++) {
-        const shardGeo = new THREE.OctahedronGeometry(0.045, 0);
-        const shard = new THREE.Mesh(shardGeo, glowMat);
-        const ang = (i / 4) * Math.PI * 2;
-        shard.position.set(Math.cos(ang) * 0.22, 0.22, Math.sin(ang) * 0.22);
-        orbitGroup.add(shard);
-      }
+      const crown = createIceCrown();
+      headFXGroup.add(crown.root);
+      headFXGroup.userData.updateIce = crown.update;
       break;
     }
 
     case 'wind': {
-      // ── 🍃 SWIRLING TORNADO / CYCLONE VORTEX AROUND HEAD ──
-      // 3 ascending, expanding cyclone wind vortex rings forming a tornado funnel
-      const ringHeights = [0.12, 0.22, 0.32];
-      const ringRadii = [0.16, 0.22, 0.28];
-      ringHeights.forEach((h, idx) => {
-        const r = ringRadii[idx];
-        const cycloneRingGeo = new THREE.TorusGeometry(r, 0.024, 8, 32);
-        cycloneRingGeo.rotateX(Math.PI / 2.3);
-        cycloneRingGeo.rotateZ(idx * 0.4);
-        const cycloneRing = new THREE.Mesh(cycloneRingGeo, idx === 1 ? glowMat : coreMat);
-        cycloneRing.position.y = h;
-        orbitGroup.add(cycloneRing);
-      });
-
-      // 4 curved aerodynamic breeze ribbons streaming back
-      for (let i = 0; i < 4; i++) {
-        const ribbonGeo = new THREE.ConeGeometry(0.035, 0.32, 6);
-        ribbonGeo.scale(0.3, 1.0, 1.5);
-        ribbonGeo.translate(0, 0.16, 0);
-        const ribbon = new THREE.Mesh(ribbonGeo, glowMat);
-        const ang = (i / 4) * Math.PI * 2;
-        ribbon.position.set(Math.cos(ang) * 0.18, 0.18, Math.sin(ang) * 0.18);
-        ribbon.rotation.set(-0.5, -ang, 0.6);
-        orbitGroup.add(ribbon);
-      }
+      const crest = createWindCrest();
+      headFXGroup.add(crest.root);
+      headFXGroup.userData.updateWind = crest.update;
       break;
     }
 
     case 'soil': {
-      // ── 🪨 FLOATING JAGGED ROCKS & EARTHEN BOULDERS ──
-      const rockConfigs = [
-        { x: -0.16, y: 0.14, z: 0.04, size: 0.09, rot: [0.4, 0.6, 0.2], mat: coreMat },
-        { x: 0.16, y: 0.14, z: 0.04, size: 0.09, rot: [-0.4, -0.6, 0.2], mat: coreMat },
-        { x: -0.09, y: 0.22, z: -0.06, size: 0.10, rot: [0.2, 0.8, -0.4], mat: glowMat },
-        { x: 0.09, y: 0.22, z: -0.06, size: 0.10, rot: [-0.2, -0.8, 0.4], mat: glowMat },
-        { x: 0, y: 0.12, z: -0.16, size: 0.08, rot: [0.5, -0.3, 0.2], mat: coreMat },
-        { x: 0, y: 0.26, z: 0.08, size: 0.085, rot: [-0.5, 0.3, -0.2], mat: glowMat },
-      ];
-
-      rockConfigs.forEach((cfg) => {
-        const rockGeo = new THREE.DodecahedronGeometry(cfg.size, 0);
-        const rock = new THREE.Mesh(rockGeo, cfg.mat);
-        rock.position.set(cfg.x, cfg.y, cfg.z);
-        rock.rotation.set(cfg.rot[0], cfg.rot[1], cfg.rot[2]);
-        orbitGroup.add(rock);
-      });
-
-      // Center rugged monolith stone spire
-      const monolithGeo = new THREE.ConeGeometry(0.055, 0.35, 5);
-      monolithGeo.translate(0, 0.17, 0);
-      const monolith = new THREE.Mesh(monolithGeo, coreMat);
-      monolith.position.set(0, 0.14, 0);
-      headFXGroup.add(monolith);
+      const crest = createMineralCrest();
+      headFXGroup.add(crest.root);
+      headFXGroup.userData.updateSoil = crest.update;
       break;
     }
 
     case 'dark': {
-      // ── 🌑 DARK PURPLE VOID FLAMES & OBSIDIAN HORNS ──
-      // Twin curved demon horns
-      const createHorn = (isLeft: boolean) => {
-        const hornGroup = new THREE.Group();
-        const dir = isLeft ? -1 : 1;
-
-        const baseGeo = new THREE.CylinderGeometry(0.04, 0.055, 0.24, 8);
-        baseGeo.translate(0, 0.12, 0);
-        const baseMesh = new THREE.Mesh(baseGeo, coreMat);
-        baseMesh.rotation.set(-0.35, 0, dir * 0.55);
-        hornGroup.add(baseMesh);
-
-        const tipGeo = new THREE.ConeGeometry(0.04, 0.26, 8);
-        tipGeo.translate(0, 0.13, 0);
-        const tipMesh = new THREE.Mesh(tipGeo, glowMat);
-        tipMesh.position.set(dir * 0.11, 0.18, -0.06);
-        tipMesh.rotation.set(-0.65, 0, dir * 0.35);
-        hornGroup.add(tipMesh);
-
-        return hornGroup;
-      };
-
-      const hornL = createHorn(true);
-      hornL.position.set(-0.10, 0.12, -0.02);
-      headFXGroup.add(hornL);
-
-      const hornR = createHorn(false);
-      hornR.position.set(0.10, 0.12, -0.02);
-      headFXGroup.add(hornR);
-
-      // 5 curling dark purple void flames rising from head
-      for (let i = 0; i < 5; i++) {
-        const flameGeo = new THREE.ConeGeometry(0.038, 0.30, 6);
-        flameGeo.translate(0, 0.15, 0);
-        const flame = new THREE.Mesh(flameGeo, glowMat);
-        const ang = (i / 5) * Math.PI * 2;
-        flame.position.set(Math.cos(ang) * 0.12, 0.14, Math.sin(ang) * 0.12);
-        flame.rotation.set(-0.3, -ang, 0.2);
-        orbitGroup.add(flame);
-      }
+      const crest = createDarkCrest();
+      headFXGroup.add(crest.root);
+      headFXGroup.userData.updateDark = crest.update;
       break;
     }
 
     case 'light': {
-      // ── ✨ DAZZLING RADIANT SUNBURST & ANGELIC SOLAR HALO ──
-      // Central glowing solar orb core
-      const sunCoreGeo = new THREE.SphereGeometry(0.08, 16, 16);
-      const sunCore = new THREE.Mesh(sunCoreGeo, whiteHotMat);
-      sunCore.position.set(0, 0.28, 0);
-      orbitGroup.add(sunCore);
-
-      // Golden angelic halo hovering horizontally above head
-      const haloGeo = new THREE.TorusGeometry(0.24, 0.03, 8, 32);
-      haloGeo.rotateX(Math.PI / 2);
-      const haloMesh = new THREE.Mesh(haloGeo, glowMat);
-      haloMesh.position.y = 0.28;
-      orbitGroup.add(haloMesh);
-
-      // 12 radiant solar rays shooting outward in all directions
-      for (let i = 0; i < 12; i++) {
-        const ang = (i / 12) * Math.PI * 2;
-        const rayGeo = new THREE.ConeGeometry(0.02, 0.16, 6);
-        rayGeo.rotateZ(-Math.PI / 2);
-        rayGeo.translate(0.08, 0, 0);
-        const ray = new THREE.Mesh(rayGeo, glowMat);
-        ray.position.set(Math.cos(ang) * 0.24, 0.28, Math.sin(ang) * 0.24);
-        ray.rotation.y = -ang;
-        orbitGroup.add(ray);
-      }
+      const corona = createLightCorona(.21);
+      corona.root.position.set(0, .3, -.035);
+      headFXGroup.add(corona.root);
+      headFXGroup.userData.updateLight = corona.update;
       break;
     }
 
     case 'space': {
-      // ── 🌌 MINIATURE COSMIC GALAXY SPIRAL & SATURNIAN RINGS ──
-      // Wide planetary disc ring tilted diagonally around head
-      const ringGeo = new THREE.RingGeometry(0.18, 0.36, 32);
-      ringGeo.rotateX(Math.PI / 2.2);
-      ringGeo.rotateY(0.28);
-      const saturnRing = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
-        color: secondaryColor,
-        side: THREE.DoubleSide,
-        transparent: false,
-        opacity: 1.0,
-      }));
-      saturnRing.position.y = 0.14;
-      orbitGroup.add(saturnRing);
-
-      // 3 spherical orbiting planetoids / moons
-      for (let i = 0; i < 3; i++) {
-        const moonGeo = new THREE.SphereGeometry(0.045 + (i % 2) * 0.015, 12, 12);
-        const moon = new THREE.Mesh(moonGeo, glowMat);
-        const ang = (i / 3) * Math.PI * 2;
-        moon.position.set(Math.cos(ang) * 0.30, 0.14 + Math.sin(ang) * 0.08, Math.sin(ang) * 0.30);
-        orbitGroup.add(moon);
-      }
-
-      // Cosmic star antenna at peak
-      const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.28, 6), coreMat);
-      ant.position.set(0, 0.24, 0);
-      headFXGroup.add(ant);
-
-      const starTip = new THREE.Mesh(new THREE.OctahedronGeometry(0.06, 0), whiteHotMat);
-      starTip.position.set(0, 0.40, 0);
-      headFXGroup.add(starTip);
+      const crest = createSpaceCrest(); headFXGroup.add(crest.root);
+      headFXGroup.userData.updateSpace = crest.update;
       break;
     }
 
     case 'time': {
-      // ── ⏳ GOLDEN CLOCKWORK CHRONO GEARS & SUNDIAL ──
-      const gearGroup = new THREE.Group();
-      gearGroup.name = 'time-gear-halo';
-      gearGroup.position.set(0, 0.24, -0.05);
-
-      // Large 12-toothed golden gear wheel halo
-      const hubGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.038, 16);
-      hubGeo.rotateX(Math.PI / 2);
-      const hub = new THREE.Mesh(hubGeo, coreMat);
-      gearGroup.add(hub);
-
-      for (let i = 0; i < 12; i++) {
-        const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.07, 0.04), glowMat);
-        const ang = (i / 12) * Math.PI * 2;
-        tooth.position.set(Math.cos(ang) * 0.20, Math.sin(ang) * 0.20, 0);
-        tooth.rotation.z = ang;
-        gearGroup.add(tooth);
-      }
-
-      // Hour hand & Minute hand
-      const hourHand = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.10, 0.045), whiteHotMat);
-      hourHand.position.set(0, 0.045, 0.02);
-      hourHand.rotation.z = -0.6;
-      gearGroup.add(hourHand);
-
-      const minuteHand = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.14, 0.045), whiteHotMat);
-      minuteHand.position.set(0, 0.065, 0.02);
-      minuteHand.rotation.z = 1.2;
-      gearGroup.add(minuteHand);
-
-      headFXGroup.add(gearGroup);
+      const dial = createChronometer(.23);
+      dial.root.name = 'time-fixed-clock-crown'; dial.root.position.set(0, .26, -.07);
+      headFXGroup.add(dial.root); headFXGroup.userData.updateTime = dial.update;
       break;
     }
 
     case 'robot': {
-      // ── 🤖 CYBER MECHA ANTENNA, COMM DISHES & HUD VISOR ──
-      // Glowing neon cyber visor across the eyes
-      const visor = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.065, 0.08), glowMat);
-      visor.position.set(0, 0.02, 0.11);
-      headFXGroup.add(visor);
-
-      // Side cyber comm-link dishes
-      const earL = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.045, 12), coreMat);
-      earL.rotateZ(Math.PI / 2);
-      earL.position.set(-0.13, 0.02, 0);
-      headFXGroup.add(earL);
-
-      const earR = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.045, 12), coreMat);
-      earR.rotateZ(Math.PI / 2);
-      earR.position.set(0.13, 0.02, 0);
-      headFXGroup.add(earR);
-
-      // Central cyber mecha antenna
-      const antRod = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.022, 0.30, 8), coreMat);
-      antRod.position.set(0, 0.26, 0);
-      headFXGroup.add(antRod);
-
-      // Blinking high-intensity LED beacon sphere at tip
-      const ledMesh = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), whiteHotMat);
-      ledMesh.position.set(0, 0.42, 0);
-      headFXGroup.add(ledMesh);
+      const hardware = createRobotHardware('head'); headFXGroup.add(hardware.root);
+      headFXGroup.userData.updateRobot = hardware.update;
       break;
     }
 
     case 'healing': {
-      // ── 🌸 LUSH BLOOMING FLORA GARLAND WITH BLOSSOM & LEAVES ──
-      const floraGroup = new THREE.Group();
-      floraGroup.position.set(0, 0.14, 0);
-
-      // Blooming 5-petal cherry blossom flower on crown
-      for (let i = 0; i < 5; i++) {
-        const petalGeo = new THREE.SphereGeometry(0.07, 10, 10);
-        petalGeo.scale(0.85, 0.25, 1.4);
-        const petal = new THREE.Mesh(petalGeo, glowMat);
-        const ang = (i / 5) * Math.PI * 2;
-        petal.position.set(Math.cos(ang) * 0.15, 0.03, Math.sin(ang) * 0.15);
-        petal.rotation.y = -ang + Math.PI / 2;
-        petal.rotation.x = 0.15;
-        floraGroup.add(petal);
-      }
-
-      // Golden stamen center
-      const bud = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 12), new THREE.MeshStandardMaterial({
-        color: 0xffd54f,
-        emissive: 0xffd54f,
-        emissiveIntensity: 0.9,
-        transparent: false,
-        opacity: 1.0,
-      }));
-      bud.position.y = 0.05;
-      floraGroup.add(bud);
-
-      // 4 green plant leaves wrapping around brow
-      const leafMat = new THREE.MeshStandardMaterial({
-        color: 0x4caf50,
-        emissive: 0x2e7d32,
-        emissiveIntensity: 0.8,
-        transparent: false,
-        opacity: 1.0,
-      });
-
-      const leafAngles = [-0.5, 0.5, -1.8, 1.8];
-      leafAngles.forEach((ang) => {
-        const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.018, 0.06), leafMat);
-        leaf.position.set(Math.cos(ang) * 0.13, 0.01, Math.sin(ang) * 0.13);
-        leaf.rotation.y = -ang;
-        leaf.rotation.z = 0.2;
-        floraGroup.add(leaf);
-      });
-
-      headFXGroup.add(floraGroup);
-
-      // 4 floating sakura blossom petals in aura
-      for (let i = 0; i < 4; i++) {
-        const floatingPetal = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), glowMat);
-        floatingPetal.scale.set(0.9, 0.2, 1.3);
-        const ang = (i / 4) * Math.PI * 2;
-        floatingPetal.position.set(Math.cos(ang) * 0.22, 0.20 + (i % 2) * 0.1, Math.sin(ang) * 0.22);
-        orbitGroup.add(floatingPetal);
-      }
+      const crest = createHealingEmblem(.115); crest.root.position.set(0, .23, .025);
+      headFXGroup.add(crest.root); headFXGroup.userData.updateHealing = crest.update;
       break;
     }
 
     case 'trees': {
-      // ── 🌱 TINY GROOT (MARVEL) ICONIC BARK CROWN & SPROUTING LEAVES ──
-      const grootCrownGroup = new THREE.Group();
-      grootCrownGroup.position.set(0, 0.10, 0);
-
-      const barkCrownMat = new THREE.MeshStandardMaterial({
-        color: 0x7A4B26,
-        emissive: 0x3A1F0C,
-        emissiveIntensity: 0.35,
-        roughness: 0.90,
-        metalness: 0.05,
-        transparent: false,
-        opacity: 1.0,
-      });
-
-      const leafMat = new THREE.MeshStandardMaterial({
-        color: 0x4ADE80,
-        emissive: 0x22C55E,
-        emissiveIntensity: 0.85,
-        roughness: 0.50,
-        metalness: 0.08,
-        transparent: false,
-        opacity: 1.0,
-      });
-
-      // 8 Jagged wooden bark crest segments forming Groot's signature cut-bark crown
-      const crownSegments = [
-        { x: 0, z: 0.09, height: 0.13, width: 0.065, rotX: 0.18, rotZ: 0 },         // front center
-        { x: -0.08, z: 0.07, height: 0.17, width: 0.062, rotX: 0.15, rotZ: 0.25 },  // front left peak
-        { x: 0.08, z: 0.07, height: 0.17, width: 0.062, rotX: 0.15, rotZ: -0.25 }, // front right peak
-        { x: -0.12, z: 0.0, height: 0.21, width: 0.065, rotX: 0.0, rotZ: 0.40 },    // left ear crest
-        { x: 0.12, z: 0.0, height: 0.21, width: 0.065, rotX: 0.0, rotZ: -0.40 },   // right ear crest
-        { x: -0.07, z: -0.08, height: 0.18, width: 0.068, rotX: -0.2, rotZ: 0.20 }, // rear left peak
-        { x: 0.07, z: -0.08, height: 0.18, width: 0.068, rotX: -0.2, rotZ: -0.20 },// rear right peak
-        { x: 0, z: -0.10, height: 0.15, width: 0.070, rotX: -0.25, rotZ: 0 },       // rear center
-      ];
-
-      crownSegments.forEach((seg) => {
-        // Jagged wooden slab with beveled edges
-        const segGeo = new THREE.BoxGeometry(seg.width, seg.height, 0.038);
-        segGeo.translate(0, seg.height / 2, 0);
-        const segMesh = new THREE.Mesh(segGeo, barkCrownMat);
-        segMesh.position.set(seg.x, 0.02, seg.z);
-        segMesh.rotation.set(seg.rotX, 0, seg.rotZ);
-        grootCrownGroup.add(segMesh);
-
-        // Little jagged top notch on taller segments
-        if (seg.height > 0.16) {
-          const notchGeo = new THREE.ConeGeometry(0.020, 0.05, 4);
-          notchGeo.translate(0, 0.025, 0);
-          const notch = new THREE.Mesh(notchGeo, barkCrownMat);
-          notch.position.set(seg.x, 0.02 + seg.height, seg.z);
-          notch.rotation.set(seg.rotX, 0, seg.rotZ);
-          grootCrownGroup.add(notch);
-        }
-      });
-
-      // 4 Fresh green leaf buds sprouting out from the bark crown
-      const leafConfigs = [
-        { x: -0.11, y: 0.20, z: 0.02, rotZ: 0.7, rotY: 0.3 },
-        { x: 0.11, y: 0.20, z: 0.02, rotZ: -0.7, rotY: -0.3 },
-        { x: 0.04, y: 0.17, z: 0.08, rotZ: -0.3, rotY: 0.5 },
-        { x: -0.05, y: 0.18, z: -0.06, rotZ: 0.4, rotY: -0.6 },
-      ];
-
-      leafConfigs.forEach((cfg) => {
-        const sproutGroup = new THREE.Group();
-        sproutGroup.position.set(cfg.x, cfg.y, cfg.z);
-        sproutGroup.rotation.set(0.1, cfg.rotY, cfg.rotZ);
-
-        // Tiny twig stem
-        const stemGeo = new THREE.CylinderGeometry(0.007, 0.009, 0.06, 5);
-        stemGeo.translate(0, 0.03, 0);
-        const stem = new THREE.Mesh(stemGeo, barkCrownMat);
-        sproutGroup.add(stem);
-
-        // Young green leaf
-        const leafGeo = new THREE.SphereGeometry(0.028, 8, 8);
-        leafGeo.scale(0.8, 0.25, 1.4);
-        const leaf = new THREE.Mesh(leafGeo, leafMat);
-        leaf.position.set(0, 0.065, 0.015);
-        leaf.rotation.x = 0.35;
-        sproutGroup.add(leaf);
-
-        grootCrownGroup.add(sproutGroup);
-      });
-
-      headFXGroup.add(grootCrownGroup);
-
-      // 5 Magical Bioluminescent Spores / Fireflies (Guardians of the Galaxy glowing spores)
-      const sporeMat = new THREE.MeshStandardMaterial({
-        color: 0x86EFAC,
-        emissive: 0x4ADE80,
-        emissiveIntensity: 0.95,
-        roughness: 0.2,
-        transparent: false,
-        opacity: 1.0,
-      });
-
-      for (let i = 0; i < 5; i++) {
-        const spore = new THREE.Mesh(new THREE.SphereGeometry(0.034, 8, 8), sporeMat);
-        const ang = (i / 5) * Math.PI * 2;
-        spore.position.set(Math.cos(ang) * 0.22, 0.20 + (i % 2) * 0.12, Math.sin(ang) * 0.22);
-        orbitGroup.add(spore);
-      }
+      const crown = createTreeCrest();
+      headFXGroup.add(crown.root);
+      headFXGroup.userData.updateTrees = crown.update;
       break;
     }
 
@@ -736,16 +305,79 @@ function createHeadElementPower(
 }
 
 /**
- * Builds elemental power geometries around the stick man's torso/body (Cleaned - nothing around body)
+ * Builds compact elemental features attached to the torso
  */
 function createBodyElementPower(
-  _element: ElementType,
-  _primaryColor: THREE.Color,
-  _secondaryColor: THREE.Color
+  element: ElementType
 ): THREE.Group {
   const bodyFXGroup = new THREE.Group();
   bodyFXGroup.name = 'body-element-power';
-  // Completely empty: clean stick figure body with nothing around torso/waist
+  if (element === 'healing') {
+    const core = createHealingEmblem(.055); core.root.position.set(0, .045, .115);
+    bodyFXGroup.add(core.root); bodyFXGroup.userData.updateHealing = core.update;
+  }
+  if (element === 'robot') {
+    const hardware = createRobotHardware('body'); bodyFXGroup.add(hardware.root);
+    bodyFXGroup.userData.updateRobot = hardware.update;
+  }
+  if (element === 'light') {
+    const feathers: ReturnType<typeof createLightRay>[] = [];
+    for (const side of [-1, 1]) for (let i = 0; i < 5; i++) {
+      const feather = createLightRay(.16 - i * .012, .025, .65, true);
+      feather.root.position.set(side * .025, .02 - i * .018, -.05);
+      feather.root.rotation.z = -side * (.75 + i * .12);
+      bodyFXGroup.add(feather.root); feathers.push(feather);
+    }
+    bodyFXGroup.userData.updateLight = (time: number) => {
+      feathers.forEach(feather => { feather.material.uniforms.uTime.value = time; });
+    };
+  }
+  if (element === 'time') {
+    const glass = createTemporalHourglass(.105); glass.root.position.set(0, .06, .1); bodyFXGroup.add(glass.root);
+    const ward = createChronometer(.38); ward.root.position.set(0, .02, -.12); ward.root.visible = false; bodyFXGroup.add(ward.root);
+    bodyFXGroup.userData.updateTime = (time: number, shielded = false) => { glass.update(time); ward.root.visible = shielded; ward.update(time, -1); };
+  }
+  if (element === 'space') {
+    const core = createCosmicLens('blackhole', .095, .9);
+    core.root.position.set(0, .045, .07); bodyFXGroup.add(core.root);
+    const ward = createSpaceWard(.4); ward.root.position.y = .08;
+    ward.root.visible = false; bodyFXGroup.add(ward.root);
+    bodyFXGroup.userData.updateSpace = (time: number, shielded = false) => {
+      core.update(time); ward.update(time, shielded);
+    };
+  }
+  if (element === 'dark') {
+    const mantle = createDarkMantle(); bodyFXGroup.add(mantle.root);
+    bodyFXGroup.userData.updateDark = mantle.update;
+  }
+  if (element === 'trees') {
+    const bark = createBarkMaterial('#69442B'), foliage = createLeafMaterial('#6D9E3E');
+    const leaves: THREE.Mesh[] = [];
+    for (const side of [-1, 1]) {
+      const shoot = createTreeBranch(u => [side * (.025 + u * .075), -.06 + u * .21, .04 + Math.sin(u * Math.PI) * .02], .013, bark, 16);
+      bodyFXGroup.add(shoot.root);
+      for (let i = 0; i < 2; i++) {
+        const leaf = new THREE.Mesh(createTreeLeafGeometry(.065), foliage);
+        leaf.position.set(side * (.065 + i * .02), .02 + i * .04, .05); leaf.rotation.z = -side * .8;
+        bodyFXGroup.add(leaf); leaves.push(leaf);
+      }
+    }
+    bodyFXGroup.userData.updateTrees = (time: number) => {
+      foliage.uniforms.uTime.value = time;
+      leaves.forEach((leaf, i) => { leaf.rotation.z = (i < 2 ? .8 : -.8) + Math.sin(time * 1.7 + i) * .1; });
+    };
+  }
+  if (element === 'soil') {
+    const stone = createStoneMaterial('#957955'), ore = createStoneMaterial('#C2A778', 1, true);
+    for (const side of [-1, 1]) {
+      const plate = new THREE.Mesh(createStrataGeometry(.065, .12, .035, side), stone);
+      plate.position.set(side * .065, .01, .03); plate.rotation.z = -side * .15;
+      bodyFXGroup.add(plate);
+      const seam = new THREE.Mesh(createStrataGeometry(.012, .07, .01, side), ore);
+      seam.position.set(side * .061, .015, .055); seam.rotation.z = side * .2;
+      bodyFXGroup.add(seam);
+    }
+  }
   return bodyFXGroup;
 }
 /**
@@ -931,16 +563,6 @@ function createWeaponProp(
     opacity: 1.0,
   });
 
-  const vividSolarSunMat = new THREE.MeshStandardMaterial({
-    color: 0xfff176,
-    emissive: 0xffd700,
-    emissiveIntensity: 1.35,
-    roughness: 0.1,
-    metalness: 0.2,
-    transparent: false,
-    opacity: 1.0,
-  });
-
   const vividRoseElixirMat = new THREE.MeshStandardMaterial({
     color: 0xff4081,
     emissive: 0xf50057,
@@ -953,63 +575,18 @@ function createWeaponProp(
 
   switch (element) {
     case 'soil': {
-      // ── 🪨 SOIL / MINERAL: BEDROCK FORTRESS TOWER SHIELD ──
-      const shieldGroup = new THREE.Group();
-      shieldGroup.position.set(0.02, 0.08, 0.06);
-      shieldGroup.rotation.set(0.15, 0.35, -0.05);
-
-      // Dark slate granite stone slab
-      const stonePlate = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.46, 0.045), graniteSlateMat);
-      shieldGroup.add(stonePlate);
-
-      // Beveled golden brass rim framing the shield
-      const rimTop = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.038, 0.058), polishedGoldMat);
-      rimTop.position.y = 0.22;
-      shieldGroup.add(rimTop);
-
-      const rimBot = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.038, 0.058), polishedGoldMat);
-      rimBot.position.y = -0.22;
-      shieldGroup.add(rimBot);
-
-      const rimL = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.46, 0.058), polishedGoldMat);
-      rimL.position.x = -0.14;
-      shieldGroup.add(rimL);
-
-      const rimR = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.46, 0.058), polishedGoldMat);
-      rimR.position.x = 0.14;
-      shieldGroup.add(rimR);
-
-      // Central protruding faceted amber mineral boss
-      const bossGeo = new THREE.OctahedronGeometry(0.08, 0);
-      bossGeo.scale(1.0, 1.25, 0.7);
-      const boss = new THREE.Mesh(bossGeo, polishedGoldMat);
-      boss.position.z = 0.038;
-      shieldGroup.add(boss);
-
-      const bossCore = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 8), whiteHotMat);
-      bossCore.position.z = 0.048;
-      shieldGroup.add(bossCore);
-
-      // 4 heavy forged steel corner bolts
-      const boltGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.065, 6);
-      boltGeo.rotateX(Math.PI / 2);
-      [
-        [-0.11, 0.17],
-        [0.11, 0.17],
-        [-0.11, -0.17],
-        [0.11, -0.17],
-      ].forEach(([bx, by]) => {
-        const bolt = new THREE.Mesh(boltGeo, gleamingSilverMat);
-        bolt.position.set(bx, by, 0.012);
-        shieldGroup.add(bolt);
-      });
-
-      // Arm bracket on back
-      const bracket = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.16, 6), darkIronMat);
-      bracket.position.set(-0.02, 0, -0.045);
-      shieldGroup.add(bracket);
-
-      propGroup.add(shieldGroup);
+      const shield = new THREE.Group(); shield.name = 'soil-strata-focus';
+      shield.position.set(.02, .06, .05); shield.rotation.set(.12, .2, -.05);
+      const stone = createStoneMaterial('#796249'), ore = createStoneMaterial('#C8AC78', 1, true);
+      for (let row = 0; row < 3; row++) {
+        const plate = new THREE.Mesh(createStrataGeometry(.23, .13, .045, row), stone);
+        plate.position.y = (row - 1) * .12; shield.add(plate);
+      }
+      for (let i = 0; i < 3; i++) {
+        const crystal = new THREE.Mesh(createStrataGeometry(.022, .09 - i * .018, .022, i), ore);
+        crystal.position.set((i - 1) * .024, .01, .04); crystal.rotation.z = (i - 1) * .23; shield.add(crystal);
+      }
+      propGroup.add(shield);
       break;
     }
 
@@ -1289,14 +866,9 @@ function createWeaponProp(
       base.position.y = -0.14;
       lanternGroup.add(base);
 
-      // Blazing sun core
-      const sunStar = new THREE.Mesh(new THREE.SphereGeometry(0.058, 12, 12), whiteHotMat);
-      sunStar.position.y = -0.04;
-      lanternGroup.add(sunStar);
-
-      const sunHalo = new THREE.Mesh(new THREE.TorusGeometry(0.068, 0.012, 8, 16), vividSolarSunMat);
-      sunHalo.position.y = -0.04;
-      lanternGroup.add(sunHalo);
+      const lanternSun = createLightCorona(.065);
+      lanternSun.root.position.y = -.04;
+      lanternGroup.add(lanternSun.root);
 
       propGroup.add(lanternGroup);
       break;
@@ -1349,88 +921,15 @@ function createWeaponProp(
     }
 
     case 'space': {
-      // ── 🌌 SPACE: BRASS CELESTIAL SPYGLASS / TELESCOPE ──
-      const scopeGroup = new THREE.Group();
-      scopeGroup.position.set(0, 0.06, 0.06);
-      scopeGroup.rotation.x = -0.22;
-
-      // Eyepiece
-      const eyepiece = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.13, 8), shinyBrassMat);
-      eyepiece.position.z = -0.13;
-      eyepiece.rotation.x = Math.PI / 2;
-      scopeGroup.add(eyepiece);
-
-      // Middle draw tube
-      const midTube = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.18, 8), darkIronMat);
-      midTube.position.z = 0.01;
-      midTube.rotation.x = Math.PI / 2;
-      scopeGroup.add(midTube);
-
-      // Knurled gold focus dial
-      const dial = new THREE.Mesh(new THREE.TorusGeometry(0.037, 0.009, 6, 16), polishedGoldMat);
-      dial.position.z = 0.09;
-      scopeGroup.add(dial);
-
-      // Main objective barrel
-      const objBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.046, 0.22, 8), shinyBrassMat);
-      objBarrel.position.z = 0.20;
-      objBarrel.rotation.x = Math.PI / 2;
-      scopeGroup.add(objBarrel);
-
-      // Starlight lens
-      const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.020, 12), vividVoidMagentaMat);
-      lens.position.z = 0.315;
-      lens.rotation.x = Math.PI / 2;
-      scopeGroup.add(lens);
-
-      // Top mini viewfinder
-      const finder = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.15, 6), polishedGoldMat);
-      finder.position.set(0, 0.058, 0.14);
-      finder.rotation.x = Math.PI / 2;
-      scopeGroup.add(finder);
-
-      propGroup.add(scopeGroup);
+      const lens = createCosmicLens('wormhole', .12);
+      lens.root.position.set(0, .16, .04); propGroup.add(lens.root);
+      propGroup.userData.updateSpace = lens.update;
       break;
     }
 
     case 'time': {
-      // ── ⏳ TIME: CHRONOS GOLDEN HOURGLASS ──
-      const hgGroup = new THREE.Group();
-      hgGroup.position.set(0, 0.08, 0.06);
-
-      const topPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.088, 0.028, 6), polishedGoldMat);
-      topPlate.position.y = 0.19;
-      hgGroup.add(topPlate);
-
-      const botPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.088, 0.028, 6), polishedGoldMat);
-      botPlate.position.y = -0.19;
-      hgGroup.add(botPlate);
-
-      for (let i = 0; i < 3; i++) {
-        const ang = (i / 3) * Math.PI * 2;
-        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.36, 6), darkIronMat);
-        pillar.position.set(Math.cos(ang) * 0.068, 0, Math.sin(ang) * 0.068);
-        hgGroup.add(pillar);
-      }
-
-      const bulbTop = new THREE.Mesh(new THREE.ConeGeometry(0.062, 0.15, 8), shinyBrassMat);
-      bulbTop.position.y = 0.095;
-      bulbTop.rotation.x = Math.PI;
-      hgGroup.add(bulbTop);
-
-      const bulbBot = new THREE.Mesh(new THREE.ConeGeometry(0.062, 0.15, 8), shinyBrassMat);
-      bulbBot.position.y = -0.095;
-      hgGroup.add(bulbBot);
-
-      const sandPile = new THREE.Mesh(new THREE.ConeGeometry(0.048, 0.08, 8), whiteHotMat);
-      sandPile.position.y = -0.135;
-      hgGroup.add(sandPile);
-
-      const sandStream = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.11, 6), whiteHotMat);
-      sandStream.position.y = 0.01;
-      hgGroup.add(sandStream);
-
-      propGroup.add(hgGroup);
+      const glass = createTemporalHourglass(.24); glass.root.position.set(0, .08, .06);
+      propGroup.add(glass.root); propGroup.userData.updateTime = glass.update;
       break;
     }
 
@@ -1476,53 +975,12 @@ function createWeaponProp(
     }
 
     case 'healing': {
-      // ── 🌸 HEALING: VITALITY ELIXIR POTION FLASK ──
-      const flaskGroup = new THREE.Group();
-      flaskGroup.position.set(0, 0.06, 0.06);
-
-      // Spherical glass flask with ruby elixir
-      const flaskBelly = new THREE.Mesh(new THREE.SphereGeometry(0.098, 12, 10), vividRoseElixirMat);
-      flaskBelly.position.y = -0.035;
-      flaskGroup.add(flaskBelly);
-
-      // White-hot bubbling heart
-      const bubblingHeart = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 10), whiteHotMat);
-      bubblingHeart.position.y = -0.040;
-      flaskGroup.add(bubblingHeart);
-
-      // Brass neck & lip
-      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.046, 0.09, 10), polishedGoldMat);
-      neck.position.y = 0.065;
-      flaskGroup.add(neck);
-
-      const lip = new THREE.Mesh(new THREE.TorusGeometry(0.042, 0.012, 6, 16), polishedGoldMat);
-      lip.position.y = 0.11;
-      lip.rotation.x = Math.PI / 2;
-      flaskGroup.add(lip);
-
-      // Carved oak cork stopper
-      const cork = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.028, 0.044, 8), carvedWoodMat);
-      cork.position.y = 0.138;
-      flaskGroup.add(cork);
-
-      // Sprouting green life leaves
-      const leaf1 = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.016, 0.032), leafGreenMat);
-      leaf1.position.set(-0.028, 0.170, 0);
-      leaf1.rotation.z = 0.50;
-      flaskGroup.add(leaf1);
-
-      const leaf2 = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.016, 0.032), leafGreenMat);
-      leaf2.position.set(0.028, 0.170, 0);
-      leaf2.rotation.z = -0.50;
-      flaskGroup.add(leaf2);
-
-      // Floating sparkles
-      const sparkle = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), whiteHotMat);
-      sparkle.position.set(0.028, 0.23, 0.028);
-      flaskGroup.add(sparkle);
-
-      propGroup.add(flaskGroup);
-      break;
+      const vial = new THREE.Group(); vial.name = 'healing-apothecary-vial'; vial.position.set(0, .04, .06);
+      const flask = new THREE.Mesh(new THREE.CapsuleGeometry(.065, .12, 4, 12), vividRoseElixirMat); vial.add(flask);
+      const seal = new THREE.Mesh(createHealingCrossGeometry(.026), gleamingSilverMat); seal.position.set(0, 0, .072); vial.add(seal);
+      const stopper = new THREE.Mesh(new THREE.BoxGeometry(.10, .032, .07), gleamingSilverMat); stopper.position.y = .14; vial.add(stopper);
+      const heart = new THREE.Mesh(createHealingHeartGeometry(.034), vividRoseElixirMat); heart.position.set(0, .17, 0); vial.add(heart);
+      propGroup.add(vial); break;
     }
 
     case 'trees': {
@@ -1650,7 +1108,7 @@ export function createStickMan3DCharacter(
   headElementGroup.scale.set(0.78, 0.78, 0.78); // Proportional scale matching smaller head
   headMesh.add(headElementGroup);
 
-  const bodyElementGroup = createBodyElementPower(element, primaryColor, secondaryColor);
+  const bodyElementGroup = createBodyElementPower(element);
   bodyGroup.add(bodyElementGroup);
 
   // Full volumetric Spirit World seal. Its origin is the casting palm and its
@@ -1671,6 +1129,36 @@ export function createStickMan3DCharacter(
   magicSealMesh.rotation.x = -Math.PI / 2;
   magicSealMesh.position.y = 0.01;
   group.add(magicSealMesh);
+  if (element === 'robot') {
+    ringMat.visible = false;
+    const hardware = createRobotHardware('ground'); magicSealMesh.add(hardware.root);
+    magicSealMesh.userData.updateRobot = hardware.update;
+  }
+  if (element === 'light') {
+    ringMat.visible = false;
+    const pool = createLightCorona(.24);
+    magicSealMesh.add(pool.root);
+    magicSealMesh.userData.updateLight = pool.update;
+  }
+
+
+  if (element === 'space') {
+    ringMat.visible = false;
+    const fabric = createCosmicLens('metric', .38, .55);
+    magicSealMesh.add(fabric.root);
+    magicSealMesh.userData.updateSpace = fabric.update;
+  }
+
+  if (element === 'time') {
+    ringMat.visible = false;
+    const dial = createChronometer(.34); magicSealMesh.add(dial.root); magicSealMesh.userData.updateTime = (time: number) => dial.update(time, -1);
+  }
+
+  if (element === 'healing') {
+    ringMat.visible = false;
+    const refuge = createHealingEmblem(.24); magicSealMesh.add(refuge.root);
+    magicSealMesh.userData.updateHealing = refuge.update;
+  }
 
   // Solid Inner Accent Dot
   const dotGeo = new THREE.CircleGeometry(0.08, 16);
@@ -1686,7 +1174,8 @@ export function createStickMan3DCharacter(
   group.add(shadowMesh);
 
   // ── 8. Power Beam (Summon / Special Move FX) ────────────────────────
-  const beamGeo = new THREE.CylinderGeometry(0.3, 0.6, 4.0, 16, 1, true);
+  const beamGeo = element === 'robot' ? new THREE.BoxGeometry(.02, 2.8, .02) : element === 'space' ? new THREE.PlaneGeometry(.85, 2.8)
+    : new THREE.CylinderGeometry(0.3, 0.6, 4.0, 16, 1, true);
   const beamMat = new THREE.MeshBasicMaterial({
     color: primaryColor,
     transparent: false,
@@ -1694,12 +1183,14 @@ export function createStickMan3DCharacter(
     side: THREE.DoubleSide,
     visible: false,
   });
-  const powerBeamMesh = new THREE.Mesh(beamGeo, beamMat);
+  const powerBeamMesh = new THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial | THREE.ShaderMaterial>(beamGeo, element === 'space' ? createCosmicMaterial('wormhole') : beamMat);
+  if (element === 'space') { powerBeamMesh.material.visible = false; powerBeamMesh.material.opacity = 0; }
   powerBeamMesh.position.y = 2.0;
   group.add(powerBeamMesh);
 
   // Shockwave Ring
-  const waveGeo = new THREE.RingGeometry(0.25, 0.45, 24);
+  const waveGeo = element === 'robot' ? new THREE.PlaneGeometry(.65, .015) : element === 'space' ? new THREE.PlaneGeometry(.9, .9)
+    : new THREE.RingGeometry(0.25, 0.45, 24);
   const waveMat = new THREE.MeshBasicMaterial({
     color: secondaryColor,
     transparent: false,
@@ -1707,12 +1198,36 @@ export function createStickMan3DCharacter(
     side: THREE.DoubleSide,
     visible: false,
   });
-  const shockwaveMesh = new THREE.Mesh(waveGeo, waveMat);
+  const shockwaveMesh = new THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial | THREE.ShaderMaterial>(waveGeo, element === 'space' ? createCosmicMaterial('metric') : waveMat);
+  if (element === 'space') { shockwaveMesh.material.visible = false; shockwaveMesh.material.opacity = 0; }
   shockwaveMesh.rotation.x = -Math.PI / 2;
   shockwaveMesh.position.y = 0.03;
   group.add(shockwaveMesh);
 
+  if (element === 'time') {
+    // Preserve animation handles while replacing the generic beam and ring silhouettes.
+    powerBeamMesh.geometry.dispose(); powerBeamMesh.geometry = new THREE.BufferGeometry();
+    const hourglass = createTemporalHourglass(.48); hourglass.root.position.y = -1.35;
+    powerBeamMesh.material.opacity = 0; hourglass.root.visible = false;
+    powerBeamMesh.add(hourglass.root); powerBeamMesh.userData.updateTime = hourglass.update;
+    shockwaveMesh.geometry.dispose(); shockwaveMesh.geometry = new THREE.BufferGeometry();
+    const dial = createChronometer(.42); shockwaveMesh.material.opacity = 0; dial.root.visible = false; shockwaveMesh.add(dial.root); shockwaveMesh.userData.updateTime = (time: number) => dial.update(time, -1);
+  }
+
   // ── 9. Hitbox for Raycasting (Clicking on character) ────────────────
+  if (element === 'healing') {
+    powerBeamMesh.geometry.dispose(); powerBeamMesh.geometry = new THREE.BufferGeometry();
+    powerBeamMesh.material.opacity = 0;
+    powerBeamMesh.rotation.y = 0;
+    const pulse = createHealingEmblem(.32); pulse.root.position.y = -1.3;
+    pulse.root.visible = false;
+    powerBeamMesh.add(pulse.root); powerBeamMesh.userData.updateHealing = pulse.update;
+    shockwaveMesh.geometry.dispose(); shockwaveMesh.geometry = new THREE.BufferGeometry();
+    shockwaveMesh.material.opacity = 0;
+    const mend = createHealingEmblem(.34); mend.root.visible = false;
+    shockwaveMesh.add(mend.root); shockwaveMesh.userData.updateHealing = mend.update;
+  }
+
   const hitBoxGeo = new THREE.CylinderGeometry(0.35, 0.35, 1.1, 8);
   const hitBoxMat = new THREE.MeshBasicMaterial({ visible: false });
   const hitBoxMesh = new THREE.Mesh(hitBoxGeo, hitBoxMat);
@@ -1723,7 +1238,7 @@ export function createStickMan3DCharacter(
   const baseScale = scaleVariant * 0.44;
   group.scale.set(baseScale, baseScale, baseScale);
 
-  return {
+  const character: StickMan3DCharacter = {
     id,
     element,
     group,
@@ -1760,4 +1275,7 @@ export function createStickMan3DCharacter(
     waypointIdx: 0,
     isRallyMoving: false,
   };
+  installArchangelMichael(character);
+  installFallenLucifer(character);
+  return character;
 }

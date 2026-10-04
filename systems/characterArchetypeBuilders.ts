@@ -1,5 +1,8 @@
+import { createHealingCrossGeometry } from './healingVitality';
 import * as THREE from 'three';
 import { ElementType } from '../types';
+import { ELEMENT_PALETTES } from '../data/elementPalettes';
+import { carveCharacterBark } from './treeNature';
 
 export interface BuiltCharacterMaterials {
   stickBodyMat: THREE.Material;
@@ -10,454 +13,26 @@ export interface BuiltCharacterMaterials {
   highlightMat: THREE.Material;
 }
 
-/**
- * Creates rich, bespoke physical materials tailored to each elemental hero's substance
- * (stone, lava, liquid, crystal, metal, bark, composite armor, fabric, void).
- */
+/** Palette roles stay consistent across bodies, archetypes, and UI; substance controls the finish. */
 export function buildCharacterMaterials(
   element: ElementType,
   primaryColor: THREE.Color,
   secondaryColor: THREE.Color
 ): BuiltCharacterMaterials {
-  const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-
-  switch (element) {
-    case 'fire': {
-      // Radiant blazing crimson & molten gold
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0xff3d00,
-          emissive: 0xff2200,
-          emissiveIntensity: 0.60,
-          roughness: 0.20,
-          metalness: 0.10,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0xffb300,
-          emissive: 0xff8f00,
-          emissiveIntensity: 0.85,
-          roughness: 0.20,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0xffeb3b }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0xff1744,
-          emissive: 0xff5252,
-          emissiveIntensity: 1.0,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0xff6d00,
-          emissive: 0xff3d00,
-          emissiveIntensity: 0.75,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'water': {
-      // Vivid ocean azure & luminous aqua
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0x0091ea,
-          emissive: 0x0077b6,
-          emissiveIntensity: 0.60,
-          roughness: 0.20,
-          metalness: 0.20,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0x00e5ff,
-          emissive: 0x00b4d8,
-          emissiveIntensity: 0.85,
-          roughness: 0.20,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0xb2ebf2 }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0x00b0ff,
-          emissive: 0x40c4ff,
-          emissiveIntensity: 0.90,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0x48cae4,
-          emissive: 0x0096c7,
-          emissiveIntensity: 0.75,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'lightning': {
-      // Brilliant radiant electric gold & white-hot spark
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0xffea00,
-          emissive: 0xffd600,
-          emissiveIntensity: 0.65,
-          roughness: 0.20,
-          metalness: 0.20,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0xffffff,
-          emissive: 0xfff59d,
-          emissiveIntensity: 0.95,
-          roughness: 0.15,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0xffffff }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0xffd600,
-          emissive: 0xffff55,
-          emissiveIntensity: 1.0,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0xfff176,
-          emissive: 0xffc107,
-          emissiveIntensity: 0.85,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'ice': {
-      // Brilliant crystal glacial azure & diamond frost
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0x00b4d8,
-          emissive: 0x0096c7,
-          emissiveIntensity: 0.60,
-          roughness: 0.15,
-          metalness: 0.30,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0x80d8ff,
-          emissive: 0x40c4ff,
-          emissiveIntensity: 0.85,
-          roughness: 0.15,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0xe0f7fa }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0x90e0ef,
-          emissive: 0x00f0ff,
-          emissiveIntensity: 0.95,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0xcaf0f8,
-          emissive: 0x00b4d8,
-          emissiveIntensity: 0.75,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'wind': {
-      // Bright spring emerald & luminous jade
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0x00e676,
-          emissive: 0x00c853,
-          emissiveIntensity: 0.60,
-          roughness: 0.25,
-          metalness: 0.10,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0xb9f6ca,
-          emissive: 0x69f0ae,
-          emissiveIntensity: 0.85,
-          roughness: 0.20,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0xe8f5e9 }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0x00e676,
-          emissive: 0xb9f6ca,
-          emissiveIntensity: 0.90,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0x66bb6a,
-          emissive: 0x43a047,
-          emissiveIntensity: 0.75,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'soil': {
-      // Warm golden terracotta amber & sandstone gold
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0xff8f00,
-          emissive: 0xe65100,
-          emissiveIntensity: 0.55,
-          roughness: 0.35,
-          metalness: 0.10,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0xffe082,
-          emissive: 0xffca28,
-          emissiveIntensity: 0.75,
-          roughness: 0.30,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0xfff8e1 }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0xffa000,
-          emissive: 0xff6f00,
-          emissiveIntensity: 0.85,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0xffb74d,
-          emissive: 0xf57c00,
-          emissiveIntensity: 0.65,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'trees': {
-      // Tiny Groot warm golden cedar wood & fresh sprout green
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0xb07238,
-          emissive: 0x663d18,
-          emissiveIntensity: 0.50,
-          roughness: 0.65,
-          metalness: 0.05,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0x4ade80,
-          emissive: 0x22c55e,
-          emissiveIntensity: 0.85,
-          roughness: 0.40,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0x050403 }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0x22c55e,
-          emissive: 0x4ade80,
-          emissiveIntensity: 0.90,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0x86efac,
-          emissive: 0x4ade80,
-          emissiveIntensity: 0.75,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'dark': {
-      // Luminous neon ultraviolet & vivid amethyst purple
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0xba68c8,
-          emissive: 0x8e24aa,
-          emissiveIntensity: 0.60,
-          roughness: 0.20,
-          metalness: 0.20,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0xea80fc,
-          emissive: 0xd500f9,
-          emissiveIntensity: 0.90,
-          roughness: 0.20,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0xf3e5f5 }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0xab47bc,
-          emissive: 0xce93d8,
-          emissiveIntensity: 0.95,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0x9c27b0,
-          emissive: 0x7b1fa2,
-          emissiveIntensity: 0.75,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'light': {
-      // Radiant solar ivory-gold & polished golden radiance
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0xfff59d,
-          emissive: 0xffee58,
-          emissiveIntensity: 0.65,
-          roughness: 0.20,
-          metalness: 0.30,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0xffd700,
-          emissive: 0xffa000,
-          emissiveIntensity: 0.90,
-          metalness: 0.85,
-          roughness: 0.20,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0xffffff }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0xffd700,
-          emissive: 0xfff176,
-          emissiveIntensity: 1.0,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0xffffff,
-          emissive: 0xfff9c4,
-          emissiveIntensity: 0.80,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'space': {
-      // Vibrant cosmic nebula fuchsia & starlight pink
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0xf06292,
-          emissive: 0xe91e63,
-          emissiveIntensity: 0.60,
-          roughness: 0.20,
-          metalness: 0.20,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0xff80ab,
-          emissive: 0xff4081,
-          emissiveIntensity: 0.90,
-          roughness: 0.20,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0xffffff }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0xf50057,
-          emissive: 0xff80ab,
-          emissiveIntensity: 0.95,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0xb388ff,
-          emissive: 0x7c4dff,
-          emissiveIntensity: 0.75,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'time': {
-      // Bright gleaming clockwork gold & brilliant antique brass
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0xffb74d,
-          emissive: 0xff9800,
-          emissiveIntensity: 0.55,
-          roughness: 0.25,
-          metalness: 0.40,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0xffe082,
-          emissive: 0xffd54f,
-          emissiveIntensity: 0.85,
-          metalness: 0.80,
-          roughness: 0.20,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0xfff9c4 }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0xffb74d,
-          emissive: 0xffa726,
-          emissiveIntensity: 0.90,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0xffcc80,
-          emissive: 0xffb300,
-          emissiveIntensity: 0.70,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'robot': {
-      // Sleek luminous titanium silver-white & cyan neon
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0xcfd8dc,
-          emissive: 0x90a4ae,
-          emissiveIntensity: 0.55,
-          roughness: 0.20,
-          metalness: 0.60,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0x00e5ff,
-          emissive: 0x00b0ff,
-          emissiveIntensity: 0.95,
-          roughness: 0.15,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0x18ffff }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0x00e5ff,
-          emissive: 0x84ffff,
-          emissiveIntensity: 1.0,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0xb0bec5,
-          emissive: 0x80deea,
-          emissiveIntensity: 0.70,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'healing': {
-      // Radiant cherry blossom pink & fresh spring leaf green
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0xff80ab,
-          emissive: 0xf50057,
-          emissiveIntensity: 0.60,
-          roughness: 0.25,
-          metalness: 0.10,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0x69f0ae,
-          emissive: 0x00e676,
-          emissiveIntensity: 0.85,
-          roughness: 0.20,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0xffffff }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0xff4081,
-          emissive: 0xf8bbd0,
-          emissiveIntensity: 0.95,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0xb9f6ca,
-          emissive: 0x69f0ae,
-          emissiveIntensity: 0.75,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-
-    case 'void': {
-      // Brilliant striking crimson-ruby event horizon flare
-      return {
-        stickBodyMat: new THREE.MeshStandardMaterial({
-          color: 0xff1744,
-          emissive: 0xd50000,
-          emissiveIntensity: 0.65,
-          roughness: 0.20,
-          metalness: 0.20,
-        }),
-        jointMat: new THREE.MeshStandardMaterial({
-          color: 0xff5252,
-          emissive: 0xff1744,
-          emissiveIntensity: 0.95,
-          roughness: 0.20,
-        }),
-        eyeMat: new THREE.MeshBasicMaterial({ color: 0xff8a80 }),
-        coreMat: new THREE.MeshStandardMaterial({
-          color: 0xff1744,
-          emissive: 0xff5252,
-          emissiveIntensity: 1.0,
-        }),
-        accentMat: new THREE.MeshStandardMaterial({
-          color: 0xff8a80,
-          emissive: 0xff5252,
-          emissiveIntensity: 0.80,
-        }),
-        highlightMat: whiteMat,
-      };
-    }
-  }
+  const palette = ELEMENT_PALETTES[element];
+  const surface = (color: THREE.ColorRepresentation, emission: number, metalness = palette.metalness) =>
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: emission,
+      roughness: palette.roughness, metalness });
+  const body = surface(palette.body ?? primaryColor, palette.emission);
+  if (element === 'trees') carveCharacterBark(body);
+  return {
+    stickBodyMat: body,
+    jointMat: surface(element === 'robot' ? '#25343F' : secondaryColor, element === 'robot' ? .03 : .22, palette.metalness * .5),
+    coreMat: surface(palette.accent, .45),
+    accentMat: surface(palette.accent, .18),
+    eyeMat: new THREE.MeshBasicMaterial({ color: palette.eye }),
+    highlightMat: new THREE.MeshBasicMaterial({ color: palette.eye }),
+  };
 }
 
 /**
@@ -470,7 +45,7 @@ export function buildCharacterHead(
 ): { headMesh: THREE.Mesh; eyesMesh: THREE.Mesh } {
   const isGroot = element === 'trees';
   const headRadius = isGroot ? 0.148 : 0.138;
-  const headGeo = new THREE.SphereGeometry(headRadius, 16, 16);
+  const headGeo = element === 'robot' ? new THREE.BoxGeometry(.25, .23, .23) : new THREE.SphereGeometry(headRadius, 16, 16);
 
   if (isGroot) {
     headGeo.scale(1.05, 0.96, 1.02);
@@ -703,20 +278,7 @@ export function buildCharacterHead(
     rightEye.rotation.z = 0.28;
     eyeContainer.add(rightEye);
 
-    // Twin curved obsidian demon horns
-    const hornGeo = new THREE.ConeGeometry(0.024, 0.18, 6);
-    hornGeo.translate(0, 0.09, 0);
-
-    const hornL = new THREE.Mesh(hornGeo, mats.jointMat);
-    hornL.position.set(-0.08, 0.08, -0.02);
-    hornL.rotation.set(-0.35, 0, 0.45);
-    headMesh.add(hornL);
-
-    const hornR = new THREE.Mesh(hornGeo, mats.jointMat);
-    hornR.position.set(0.08, 0.08, -0.02);
-    hornR.rotation.set(-0.35, 0, -0.45);
-    headMesh.add(hornR);
-
+    // Curved reaper horns and grave wisps belong to the native Dark crown.
     eyesMesh = new THREE.Mesh(new THREE.BufferGeometry(), mats.eyeMat);
     eyesMesh.add(eyeContainer);
     headMesh.add(eyesMesh);
@@ -812,35 +374,23 @@ export function buildCharacterHead(
     eyesMesh.add(eyeContainer);
     headMesh.add(eyesMesh);
   } else if (element === 'robot') {
-    // ── 🤖 Robot: Angular Cyber Mecha Helmet & Neon Scanner Visor ──
-    const eyeContainer = new THREE.Group();
-    eyeContainer.position.set(0, 0.02, 0.12);
-
-    // Continuous neon cyan scanner visor
-    const visorGeo = new THREE.BoxGeometry(0.14, 0.034, 0.03);
-    const visor = new THREE.Mesh(visorGeo, mats.eyeMat);
-    eyeContainer.add(visor);
-
-    // Cyber antenna & ear comm discs
-    const earL = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.025, 8), mats.jointMat);
-    earL.rotateZ(Math.PI / 2);
-    earL.position.set(-0.13, 0.02, 0);
-    headMesh.add(earL);
-
-    const earR = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.025, 8), mats.jointMat);
-    earR.rotateZ(Math.PI / 2);
-    earR.position.set(0.13, 0.02, 0);
-    headMesh.add(earR);
-
-    const antRod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.01, 0.16, 6), mats.jointMat);
-    antRod.position.set(0, 0.17, 0);
-    headMesh.add(antRod);
-
+    headMesh.name = 'robot-armored-ai-head';
+    const eyeContainer = new THREE.Group(); eyeContainer.position.set(0, .015, .12);
+    const face = new THREE.Mesh(new THREE.BoxGeometry(.21, .12, .022), mats.accentMat); eyeContainer.add(face);
+    for (const side of [-1, 1]) {
+      const eye = new THREE.Mesh(new THREE.BoxGeometry(.055, .025, .012), mats.eyeMat);
+      eye.name = 'robot-digital-eye'; eye.position.set(side * .05, .018, .02); eyeContainer.add(eye);
+      const jaw = new THREE.Mesh(new THREE.BoxGeometry(.035, .075, .04), mats.stickBodyMat);
+      jaw.position.set(side * .108, -.06, .1); headMesh.add(jaw);
+    }
+    for (let i = 0; i < 3; i++) {
+      const grille = new THREE.Mesh(new THREE.BoxGeometry(.055, .006, .012), mats.jointMat);
+      grille.position.set(0, -.035 - i * .013, .016); eyeContainer.add(grille);
+    }
     eyesMesh = new THREE.Mesh(new THREE.BufferGeometry(), mats.eyeMat);
-    eyesMesh.add(eyeContainer);
-    headMesh.add(eyesMesh);
+    eyesMesh.add(eyeContainer); headMesh.add(eyesMesh);
   } else if (element === 'healing') {
-    // ── 🌸 Healing: Cherry Blossom Petal Bonnet & Fairy Eyes ──
+    // ── 🌸 Healing: Apothecary Clasps & Calm Eyes ──
     const eyeContainer = new THREE.Group();
     eyeContainer.position.set(0, 0.015, 0.12);
 
@@ -854,18 +404,11 @@ export function buildCharacterHead(
     rightEye.position.set(0.044, 0, 0);
     eyeContainer.add(rightEye);
 
-    // Floral blossom ear buds
-    const petalL = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 8), mats.coreMat);
-    petalL.scale.set(0.8, 1.4, 0.4);
-    petalL.position.set(-0.12, 0.04, 0);
-    petalL.rotation.z = 0.45;
-    headMesh.add(petalL);
-
-    const petalR = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 8), mats.coreMat);
-    petalR.scale.set(0.8, 1.4, 0.4);
-    petalR.position.set(0.12, 0.04, 0);
-    petalR.rotation.z = -0.45;
-    headMesh.add(petalR);
+    // Paired pearl medical clasps frame the healer's calm eyes.
+    for (const side of [-1, 1]) {
+      const clasp = new THREE.Mesh(createHealingCrossGeometry(.021), mats.eyeMat);
+      clasp.position.set(side * .12, .035, .04); headMesh.add(clasp);
+    }
 
     eyesMesh = new THREE.Mesh(new THREE.BufferGeometry(), mats.eyeMat);
     eyesMesh.add(eyeContainer);
@@ -1007,31 +550,23 @@ export function buildCharacterTorso(
     }
 
     case 'robot': {
-      // Hexagonal composite armor chest plate with digital heat vents
-      const armorPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.18, 6), mats.accentMat);
-      armorPlate.position.set(0, 0.02, 0.015);
-      torsoMesh.add(armorPlate);
-
-      const vent = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.03, 0.08), mats.jointMat);
-      vent.position.set(0, 0.04, 0.02);
-      torsoMesh.add(vent);
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(.17, .23, .13), mats.stickBodyMat);
+      plate.name = 'robot-armored-chest'; plate.position.set(0, .015, .01); torsoMesh.add(plate);
+      const abdomen = new THREE.Mesh(new THREE.BoxGeometry(.09, .07, .09), mats.accentMat);
+      abdomen.position.set(0, -.13, .005); torsoMesh.add(abdomen);
       break;
     }
 
     case 'healing': {
-      // Flower petal tunic & vine leaf sash
-      const petalTunic = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.20, 6), mats.coreMat);
-      petalTunic.position.set(0, -0.02, 0);
-      petalTunic.rotation.x = Math.PI;
-      torsoMesh.add(petalTunic);
+      const wrap = new THREE.Mesh(new THREE.BoxGeometry(.14, .16, .018), mats.jointMat);
+      wrap.position.set(0, -.01, .074); torsoMesh.add(wrap);
+      const clasp = new THREE.Mesh(createHealingCrossGeometry(.024), mats.eyeMat);
+      clasp.position.set(0, .02, .09); torsoMesh.add(clasp);
       break;
     }
 
     case 'dark': {
-      // Ragged shadow shroud mantle
-      const mantle = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.14, 0.06), mats.accentMat);
-      mantle.position.set(0, 0.06, 0);
-      torsoMesh.add(mantle);
+      // The animated cloth mantle is attached by createBodyElementPower.
       break;
     }
 
@@ -1086,10 +621,10 @@ export function buildCharacterArms(
   rightArm: { shoulder: THREE.Group; upper: THREE.Mesh; elbow: THREE.Group; lower: THREE.Mesh; hand: THREE.Mesh };
 } {
   const isGroot = element === 'trees';
-  const armLimbGeo = new THREE.CylinderGeometry(0.024, 0.024, 0.16, 8);
+  let armLimbGeo: THREE.BufferGeometry = new THREE.CylinderGeometry(0.024, 0.024, 0.16, 8);
   armLimbGeo.translate(0, -0.08, 0);
 
-  const handGeo = new THREE.SphereGeometry(0.035, 8, 8);
+  let handGeo: THREE.BufferGeometry = new THREE.SphereGeometry(0.035, 8, 8);
 
   // Left Arm
   const leftShoulder = new THREE.Group();
@@ -1210,7 +745,7 @@ export function buildCharacterLegs(
   rightLeg: { hip: THREE.Group; thigh: THREE.Mesh; knee: THREE.Group; shin: THREE.Mesh; foot: THREE.Mesh };
 } {
   const isGroot = element === 'trees';
-  const legLimbGeo = new THREE.CylinderGeometry(0.026, 0.022, 0.2, 8);
+  let legLimbGeo: THREE.BufferGeometry = element === 'robot' ? new THREE.BoxGeometry(.075, .2, .075) : new THREE.CylinderGeometry(0.026, 0.022, 0.2, 8);
   legLimbGeo.translate(0, -0.1, 0);
 
   // Default foot geometry
@@ -1288,6 +823,14 @@ export function buildCharacterLegs(
   const rightFoot = new THREE.Mesh(footGeo, footMat);
   rightFoot.position.set(0, -0.2, 0);
   rightShin.add(rightFoot);
+
+  if (isGroot) {
+    for (const foot of [leftFoot, rightFoot]) for (const side of [-1, 1]) {
+      const root = new THREE.Mesh(new THREE.CylinderGeometry(.004, .009, .07, 6), mats.stickBodyMat);
+      root.rotation.set(Math.PI / 2, 0, side * .25); root.position.set(side * .017, -.012, .045);
+      foot.add(root);
+    }
+  }
 
   // ── Element-Specific Calf / Shin Attachments ──
   if (element === 'lightning') {

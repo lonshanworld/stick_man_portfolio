@@ -1,5 +1,6 @@
 'use client';
 
+import { DEMON_POWER } from '../../data/demonPower';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Pause, Play, RotateCcw, Swords, X } from 'lucide-react';
@@ -12,7 +13,7 @@ import { soundEngine } from '../../systems/soundEngine';
 import { CombatEngine } from '../../systems/fight/combatEngine';
 import { FighterAI } from '../../systems/fight/fighterAI';
 import { applyCombatAnimation } from '../../systems/fight/combatAnimation';
-import { getCombatSpellHitRadius, getCombatSpellPresentation } from '../../systems/fight/spellPresentation';
+import { getCombatSpellHitRadius, getCombatSpellPresentation, isCombatSupportSpell } from '../../systems/fight/spellPresentation';
 import { isUltimateSpell } from '../../systems/spellPresentation';
 import { EMPTY_FIGHT_INPUT, type FightInput, type FightSnapshot, type FighterConfig } from '../../systems/fight/types';
 import { FightHUD } from './FightHUD';
@@ -44,6 +45,7 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
   const jumpQueueRef = useRef(0);
   const jumpQueueExpiresAtRef = useRef(0);
   const inputRef = useRef<FightInput>({ ...EMPTY_FIGHT_INPUT });
+  const spellInputBufferRef = useRef(0);
   const pausedRef = useRef(false);
   const [paused, setPaused] = useState(false);
   const [renderError, setRenderError] = useState<string | null>(null);
@@ -58,10 +60,12 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
     pausedRef.current = value;
     setPaused(value);
     inputRef.current = { ...EMPTY_FIGHT_INPUT };
+    spellInputBufferRef.current = 0;
     jumpQueueRef.current = 0;
     jumpQueueExpiresAtRef.current = 0;
     heldRef.current = { left: false, right: false };
-  }, []);
+    setSnapshot(engine.snapshot());
+  }, [engine]);
 
   const rematch = useCallback(() => {
     engine.reset();
@@ -101,13 +105,17 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
       if (key === 'd' || key === 'arrowright') heldRef.current.right = down;
       inputRef.current.move = heldRef.current.left === heldRef.current.right ? 0 : heldRef.current.left ? -1 : 1;
       if (!down || event.repeat) return;
+      if (pausedRef.current || engine.snapshot().phase !== 'fighting') return;
       if (key === 'w' || key === 'arrowup') {
         jumpQueueRef.current = Math.min(2, jumpQueueRef.current + 1);
         jumpQueueExpiresAtRef.current = performance.now() + 420;
       }
       if (key === 'j') inputRef.current.punch = true;
       if (key === 'k') inputRef.current.kick = true;
-      if (key === '1' || key === '2' || key === '3') inputRef.current.spell = (Number(key) - 1) as 0 | 1 | 2;
+      if (key === '1' || key === '2' || key === '3') {
+        inputRef.current.spell = (Number(key) - 1) as 0 | 1 | 2;
+        spellInputBufferRef.current = .35;
+      }
     };
     const down = (event: KeyboardEvent) => keyFor(event, true);
     const up = (event: KeyboardEvent) => keyFor(event, false);
@@ -117,7 +125,7 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };
-  }, [setPauseState]);
+  }, [engine, setPauseState]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -144,8 +152,13 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
     const spellEffects = new SpellEffectSystem(scene);
     const trackedTargetEffects: Array<{
       handle: SpellEffectHandle;
+      castId: number;
       fighterId: string;
       action: `spell${1 | 2 | 3}`;
+      followTarget: boolean;
+      followCaster: boolean;
+      shieldSpellId: string | null;
+      shieldActivated: boolean;
     }> = [];
     let width = window.innerWidth;
     let height = window.innerHeight;
@@ -161,6 +174,7 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
       width = window.innerWidth;
       height = window.innerHeight;
       unit = Math.min(92, width / 12.8);
+      engine.setFighterSize(0.35 * playerModel.group.scale.x / unit, 1.1 * playerModel.group.scale.x / unit);
       groundY = -height * 0.19;
       camera.left = -width / 2;
       camera.right = width / 2;
@@ -179,17 +193,31 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
     let previous = performance.now();
     let lastHud = 0;
     let shakeUntil = 0;
+    let shakeStrength = 0;
+    let hitStop = 0;
+    let animationTime = 0;
+    let previousPhase = engine.snapshot().phase;
+    const feedbackLayer = document.createElement('div');
+    feedbackLayer.className = 'fight-impact-layer';
+    feedbackLayer.setAttribute('aria-hidden', 'true');
+    arenaRef.current?.appendChild(feedbackLayer);
+    const feedback: Array<{ node: HTMLElement; age: number }> = [];
     const tick = (now: number) => {
       frameId = requestAnimationFrame(tick);
       const delta = Math.min((now - previous) / 1000, 0.05);
       previous = now;
-      if (!pausedRef.current) {
+      const simulationDelta = pausedRef.current || hitStop > 0 ? 0 : delta;
+      animationTime += simulationDelta;
+      if (!pausedRef.current) hitStop = Math.max(0, hitStop - delta);
+      if (simulationDelta > 0) {
         if (now > jumpQueueExpiresAtRef.current) jumpQueueRef.current = 0;
         const before = engine.snapshot();
-        const aiInput = aiRef.current.update(delta, before);
+        if (spellInputBufferRef.current <= 0) inputRef.current.spell = null;
+        const requestedSpell = inputRef.current.spell;
+        const aiInput = aiRef.current.update(simulationDelta, before);
         const hasBufferedJump = jumpQueueRef.current > 0;
         inputRef.current.jump = hasBufferedJump;
-        engine.step(delta, inputRef.current, aiInput);
+        engine.step(simulationDelta, inputRef.current, aiInput);
         if (hasBufferedJump) {
           const after = engine.snapshot().player;
           const accepted = after.jumpsUsed !== before.player.jumpsUsed
@@ -200,10 +228,21 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
         inputRef.current.jump = false;
         inputRef.current.punch = false;
         inputRef.current.kick = false;
-        inputRef.current.spell = null;
+        if (requestedSpell !== null && engine.snapshot().player.cooldowns[requestedSpell] > before.player.cooldowns[requestedSpell]) inputRef.current.spell = null;
+        spellInputBufferRef.current = Math.max(0, spellInputBufferRef.current - simulationDelta);
       }
 
       const current = engine.snapshot();
+      if (current.phase === 'intro' && previousPhase === 'finished') {
+        spellEffects.dispose();
+        trackedTargetEffects.length = 0;
+        feedback.forEach(item => item.node.remove());
+        feedback.length = 0;
+        shakeUntil = 0;
+        hitStop = 0;
+        setSpellCallout(null);
+      }
+      previousPhase = current.phase;
       for (const event of engine.drainEvents()) {
         if (event.type === 'cast') {
           const fighter = event.fighterId === current.player.id ? current.player : current.opponent;
@@ -232,16 +271,22 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
               originY,
               fighter.facing > 0 ? Math.PI / 2 : -Math.PI / 2,
               1,
-              presentation.travelPixels / worldScale,
+              spell.element === 'robot' ? presentation.travelPixels : presentation.travelPixels / worldScale,
               presentation.scale,
               true,
               spell.target === 'area' ? getCombatSpellHitRadius(spell) * unit : 0,
+              spell.action === 'shield' ? (spell.statusDuration ?? 5) + .62 : 0,
             );
-            if (handle && presentation.anchor === 'target') {
+            if (handle) {
               trackedTargetEffects.push({
                 handle,
+                castId: event.castId,
                 fighterId: fighter.id,
                 action: `spell${event.spellIndex + 1}` as `spell${1 | 2 | 3}`,
+                followTarget: presentation.anchor === 'target',
+                followCaster: isCombatSupportSpell(spell) && !['teleport', 'rewind'].includes(spell.action),
+                shieldSpellId: spell.action === 'shield' ? spell.id : null,
+                shieldActivated: false,
               });
             }
           }
@@ -256,8 +301,43 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
             key: now,
           });
         } else if (event.type === 'hit') {
-          soundEngine.playFootstep();
-          if (!reducedMotion) shakeUntil = now + 115;
+          soundEngine.playCombatImpact(event.damage);
+          if (!reducedMotion) {
+            shakeUntil = now + 140 + event.damage * 3;
+            shakeStrength = Math.min(13, 3 + event.damage * .24);
+            hitStop = Math.max(hitStop, event.damage >= 30 ? .075 : event.damage >= 10 ? .045 : .025);
+          }
+          const target = event.targetId === current.player.id ? current.player : current.opponent;
+          const node = document.createElement('span');
+          node.className = `fight-damage-number${event.damage >= 30 ? ' heavy' : ''}`;
+          node.textContent = `−${event.damage}`;
+          node.style.left = `${width / 2 + target.x * unit}px`;
+          node.style.top = `${height / 2 - groundY - target.y * unit - 140}px`;
+          feedbackLayer.appendChild(node);
+          feedback.push({ node, age: 0 });
+          if (!reducedMotion) {
+            const spark = document.createElement('span');
+            spark.className = 'fight-hit-spark';
+            spark.style.left = `${width / 2 + target.x * unit}px`;
+            spark.style.top = `${height / 2 - groundY - target.y * unit - 65}px`;
+            feedbackLayer.appendChild(spark);
+            feedback.push({ node: spark, age: .5 });
+          }
+          setSnapshot(current);
+        } else if (event.type === 'heal' || event.type === 'block') {
+          const targetId = event.type === 'heal' ? event.fighterId : event.targetId;
+          const target = targetId === current.player.id ? current.player : current.opponent;
+          const node = document.createElement('span');
+          node.className = `fight-damage-number ${event.type === 'heal' ? 'healing' : 'blocked'}`;
+          node.textContent = event.type === 'heal' ? `+${Math.round(event.amount)}` : event.broken ? 'SHIELD BREAK' : `BLOCK ${Math.round(event.absorbed)}`;
+          node.style.left = `${width / 2 + target.x * unit}px`;
+          node.style.top = `${height / 2 - groundY - target.y * unit - 140}px`;
+          feedbackLayer.appendChild(node);
+          feedback.push({ node, age: 0 });
+          if (event.type === 'block') soundEngine.playCombatImpact(3);
+          setSnapshot(current);
+        } else if (event.type === 'shield') {
+          setSnapshot(current);
         } else if (event.type === 'ko') {
           soundEngine.playSuperMove(event.fighterId === current.player.id ? current.opponent.element : current.player.element);
         }
@@ -268,16 +348,28 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
       for (let index = trackedTargetEffects.length - 1; index >= 0; index -= 1) {
         const tracked = trackedTargetEffects[index];
         const caster = tracked.fighterId === current.player.id ? current.player : current.opponent;
-        if (!tracked.handle.isAlive() || caster.action !== tracked.action || caster.actionTargetX === null) {
+        if (tracked.shieldSpellId) {
+          if (caster.shieldSpellId === tracked.shieldSpellId && caster.shieldTime > 0) tracked.shieldActivated = true;
+          if (tracked.shieldActivated && (caster.shieldSpellId !== tracked.shieldSpellId || caster.shieldTime <= 0)) tracked.handle.stop();
+        }
+        if (!tracked.handle.isAlive()) {
+          engine.setSpellHitAreas(tracked.castId, []);
           trackedTargetEffects.splice(index, 1);
           continue;
         }
-        tracked.handle.setPosition(caster.actionTargetX * unit, groundY);
-        if (caster.actionConnected) trackedTargetEffects.splice(index, 1);
+        if (tracked.followTarget && caster.action === tracked.action && caster.actionTargetX !== null) {
+          tracked.handle.setPosition(caster.actionTargetX * unit, groundY);
+        }
+        if (tracked.followCaster) {
+          tracked.handle.setPosition(caster.x * unit, groundY + caster.y * unit);
+          tracked.handle.setHeading(caster.facing > 0 ? Math.PI / 2 : -Math.PI / 2);
+        }
+        if (caster.actionConnected || caster.action !== tracked.action) tracked.followTarget = false;
       }
 
       const place = (model: typeof playerModel, fighter: typeof current.player) => {
         model.group.position.set(fighter.x * unit, groundY + fighter.y * unit, 0);
+        model.group.userData.poisonRadius = DEMON_POWER.poisonRadius * unit / model.group.scale.x;
         model.group.rotation.x = 0.14;
         model.group.rotation.y = fighter.facing > 0 ? Math.PI / 2 : -Math.PI / 2;
         const activeSpellIndex = fighter.action.startsWith('spell')
@@ -286,17 +378,33 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
         const activeSpell = activeSpellIndex >= 0 ? fighter.spells[activeSpellIndex] : undefined;
         // Portal Step vanishes only during the travel beat, then visibly
         // emerges from the second portal at its new engine position.
-        model.group.visible = !(activeSpell?.action === 'teleport'
+        model.group.visible = !((activeSpell?.action === 'teleport'
           && fighter.actionTime > 0.255
-          && fighter.actionTime < 0.43);
-        applyCombatAnimation(model, fighter, now / 1000, delta);
+          && fighter.actionTime < 0.43)
+          || (activeSpell?.action === 'cloak' && fighter.actionTime >= .62 && fighter.invulnerable > 0));
+        applyCombatAnimation(model, fighter, animationTime, simulationDelta);
       };
       place(playerModel, current.player);
       place(opponentModel, current.opponent);
-      spellEffects.update(delta * 1.18);
+      spellEffects.update(simulationDelta);
+      for (const tracked of trackedTargetEffects) {
+        if (tracked.followCaster || !engine.needsSpellHitAreas(tracked.castId)) continue;
+        engine.setSpellHitAreas(tracked.castId, tracked.handle.getHitAreas().map(area => ({
+          minX: area.minX / unit, maxX: area.maxX / unit,
+          minY: (area.minY - groundY) / unit, maxY: (area.maxY - groundY) / unit,
+        })));
+      }
+      for (let index = feedback.length - 1; index >= 0; index--) {
+        feedback[index].age += pausedRef.current ? 0 : delta;
+        if (feedback[index].age >= .75) {
+          feedback[index].node.remove();
+          feedback.splice(index, 1);
+        }
+      }
 
       if (arenaRef.current) {
-        arenaRef.current.style.transform = shakeUntil > now ? `translate(${Math.sin(now) * 5}px, ${Math.cos(now * 1.7) * 3}px)` : '';
+        const strength = shakeStrength * Math.max(0, Math.min(1, (shakeUntil - now) / 180));
+        canvas.style.transform = strength > 0 ? `translate(${Math.sin(now * .09) * strength}px, ${Math.cos(now * .13) * strength * .6}px)` : '';
       }
       renderer.render(scene, camera);
       if (now - lastHud > 80) {
@@ -309,6 +417,7 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
     return () => {
       cancelAnimationFrame(frameId);
       window.removeEventListener('resize', resize);
+      feedbackLayer.remove();
       spellEffects.dispose();
       scene.traverse(object => {
         const mesh = object as THREE.Mesh;
@@ -326,6 +435,8 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
     inputRef.current.move = move;
   };
   const onAction = (action: Pick<FightInput, 'jump' | 'punch' | 'kick' | 'spell'>) => {
+    if (pausedRef.current || engine.snapshot().phase !== 'fighting') return;
+    if (action.spell !== null) spellInputBufferRef.current = .35;
     if (action.jump) {
       jumpQueueRef.current = Math.min(2, jumpQueueRef.current + 1);
       jumpQueueExpiresAtRef.current = performance.now() + 420;
@@ -375,7 +486,7 @@ export function FightArena({ playerEntity, opponentEntity, onReturn, onChooseDif
         </div>
       )}
 
-      <FightControls fighter={snapshot.player} spells={snapshot.player.spells} onMove={onMove} onAction={onAction} />
+      <FightControls fighter={snapshot.player} spells={snapshot.player.spells} onMove={onMove} onAction={onAction} disabled={paused || snapshot.phase !== 'fighting'} />
 
       {paused && snapshot.phase !== 'finished' && (
         <div className="fight-result-backdrop" role="dialog" aria-modal="true" aria-label="Fight paused">

@@ -1,3 +1,6 @@
+import { updateHealingPower } from './healingVitality';
+import { updateTimePower } from './timeChronology';
+import { updateSpacePower } from './spaceCosmos';
 import * as THREE from 'three';
 import { StickMan3DCharacter } from '../types';
 
@@ -126,23 +129,41 @@ export function updateStickManAnimation(
   char.powerCoreMesh.scale.set(corePulse, corePulse, corePulse);
 
   // Animate orbiting elemental vortexes, waves, rocks, embers, or planetary rings
+  updateSpacePower(char, t);
+  char.headElementGroup.userData.updateRobot?.(t);
+  char.bodyElementGroup.userData.updateRobot?.(t);
+  char.magicSealMesh.userData.updateRobot?.(t);
+  char.magicSealMesh.userData.updateLight?.(t, .5);
+  char.headElementGroup.userData.updateLight?.(t);
+  char.bodyElementGroup.userData.updateLight?.(t);
+  char.headElementGroup.userData.updateFire?.(t);
+  char.headElementGroup.userData.updateWater?.(t);
+  char.headElementGroup.userData.updateLightning?.(t);
+  char.headElementGroup.userData.updateIce?.(t);
+  char.headElementGroup.userData.updateWind?.(t);
+  char.headElementGroup.userData.updateSoil?.(t);
+  char.headElementGroup.userData.updateTrees?.(t);
+  char.bodyElementGroup.userData.updateTrees?.(t);
+  char.headElementGroup.userData.updateDark?.(t);
+  char.bodyElementGroup.userData.updateDark?.(t);
   const orbitFX = char.headElementGroup.getObjectByName('head-orbit-fx');
   if (orbitFX) {
     orbitFX.rotation.y += deltaSec * 2.0;
   }
+  updateTimePower(char, timeSec);
   const timeGear = char.headElementGroup.getObjectByName('time-gear-halo');
   if (timeGear) {
     timeGear.rotation.z += deltaSec * 1.2;
   }
 
   // Rotate body power (waist ring, cosmic shards)
-  char.bodyElementGroup.rotation.y -= deltaSec * 1.1;
+  if (char.element !== 'robot' && char.element !== 'healing' && char.element !== 'soil' && char.element !== 'trees' && char.element !== 'dark' && char.element !== 'light' && char.element !== 'time' && char.element !== 'space') char.bodyElementGroup.rotation.y -= deltaSec * 1.1;
 
   // Steady, firm weapon grip in hand
 
   // ── 3. Magic Seal Continuous Ground Rotation ──────────────────────
   const sealSpinSpeed = char.castAnimationTime > 0 ? 0.08 : 0.015;
-  char.magicSealMesh.rotation.z += sealSpinSpeed;
+  if (char.element !== 'healing' && char.element !== 'robot' && char.element !== 'light' && char.element !== 'time' && char.element !== 'space') char.magicSealMesh.rotation.z += sealSpinSpeed;
 
   // ── 4. Ground Shadow Contact Scaling ──────────────────────────────
   const curY = char.bodyGroup.position.y;
@@ -161,6 +182,55 @@ export function updateStickManAnimation(
     // 3D High vertical ninja jump
     const jumpApex = Math.sin(progress * Math.PI) * 2.2;
     char.bodyGroup.position.y = 0.55 + jumpApex;
+
+    if (char.element === 'time') {
+      const pulse = Math.sin(progress * Math.PI);
+      char.bodyGroup.position.y = .55;
+      char.bodyGroup.rotation.x = -.12 * pulse;
+      char.rightArm.shoulder.rotation.x = -1.4 * pulse;
+      char.rightArm.elbow.rotation.x = -1.1 * pulse;
+      char.leftArm.shoulder.rotation.z = -.6 * pulse;
+      (char.powerBeamMesh.material as THREE.Material).opacity = pulse * .65;
+      (char.shockwaveMesh.material as THREE.Material).opacity = pulse * .5;
+      char.shockwaveMesh.scale.setScalar(1 + pulse * .3);
+      updateTimePower(char, timeSec);
+      return;
+    }
+
+    if (char.element === 'soil' || char.element === 'trees' || char.element === 'dark' || char.element === 'light') {
+      char.bodyGroup.position.y = .55 - Math.sin(progress * Math.PI) * .08;
+      char.bodyGroup.rotation.x = Math.sin(progress * Math.PI) * .3;
+      char.leftLeg.knee.rotation.x = .18 + Math.sin(progress * Math.PI) * .3;
+      char.rightLeg.knee.rotation.x = .18 + Math.sin(progress * Math.PI) * .3;
+      char.rightArm.shoulder.rotation.x = -.8 + progress * .8;
+      char.leftArm.shoulder.rotation.x = -.8 + progress * .8;
+      (char.powerBeamMesh.material as THREE.MeshBasicMaterial).opacity = 0;
+      (char.shockwaveMesh.material as THREE.MeshBasicMaterial).opacity = 0;
+      return;
+    }
+
+    if (char.element === 'healing') {
+      // Grounded, open-handed restoration instead of the generic acrobatic attack.
+      const pulse = Math.sin(progress * Math.PI);
+      char.bodyGroup.position.y = .55 + pulse * .035;
+      char.bodyGroup.rotation.x = -.08 * pulse;
+      char.leftArm.shoulder.rotation.x = char.rightArm.shoulder.rotation.x = -.9 * pulse;
+      char.leftArm.elbow.rotation.x = char.rightArm.elbow.rotation.x = -.55;
+      (char.powerBeamMesh.material as THREE.Material).opacity = pulse * .65;
+      (char.shockwaveMesh.material as THREE.Material).opacity = pulse * .45;
+      char.shockwaveMesh.scale.setScalar(1 + pulse * .25);
+      updateHealingPower(char, timeSec);
+      return;
+    }
+
+    if (char.element === 'robot') {
+      char.bodyGroup.position.y = .55 - Math.sin(progress * Math.PI) * .035;
+      char.bodyGroup.rotation.x = -.12 * Math.sin(progress * Math.PI);
+      char.leftArm.shoulder.rotation.x = char.rightArm.shoulder.rotation.x = -1.2 * Math.sin(progress * Math.PI);
+      (char.powerBeamMesh.material as THREE.Material).opacity = 0;
+      (char.shockwaveMesh.material as THREE.Material).opacity = 0;
+      return;
+    }
 
     // Full 360° Acrobatic Somersault Backflip!
     char.bodyGroup.rotation.x = Math.sin(progress * Math.PI) * Math.PI * 2;
@@ -197,4 +267,5 @@ export function updateStickManAnimation(
       char.bodyGroup.rotation.x = 0;
     }
   }
+  updateHealingPower(char, timeSec);
 }

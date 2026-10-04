@@ -4,6 +4,7 @@ import React from 'react';
 import { ElementType } from '../../types';
 import { STICK_MAN_ARCHETYPES, FEATURED_ELEMENTS } from '../../data/stickManArchetypes';
 import { soundEngine } from '../../systems/soundEngine';
+import { ElementSigil } from '../ui/SpellIcon';
 
 interface ElementalDockProps {
   activeRealm: ElementType;
@@ -31,7 +32,7 @@ export const ElementalDock: React.FC<ElementalDockProps> = ({
           boxShadow: `0 10px 35px ${activeDef.glowColor}`,
         }}
       >
-        <span className="hidden lg:inline-block text-[10px] font-mono uppercase tracking-widest text-white/50 pl-1 pr-2 border-r border-white/10">
+        <span className="hidden lg:inline-block text-[12px] font-mono uppercase tracking-widest text-white/50 pl-1 pr-2 border-r border-white/10">
           Squad
         </span>
 
@@ -54,9 +55,10 @@ export const ElementalDock: React.FC<ElementalDockProps> = ({
               }}
               title={`${item.name} (${item.title})`}
               aria-label={`Select ${item.name}`}
+              aria-pressed={isActive}
             >
-              <span className="text-lg md:text-xl drop-shadow">{item.symbol}</span>
-              <span className="text-[9px] font-bold font-mono tracking-tighter uppercase text-white/90 mt-0.5">
+              <span style={{ color: item.secondaryColor }}><ElementSigil element={el} size={25} /></span>
+              <span className="text-[11px] font-bold font-mono tracking-tighter uppercase text-white/90 mt-0.5">
                 {item.id}
               </span>
 

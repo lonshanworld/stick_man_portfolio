@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import './portfolio.css';
+import './identity.css';
 
 const SITE_URL = 'https://lonshan.com';
 const SITE_TITLE = 'Lon Shan | Full-Stack & Creative Software Engineer';
@@ -21,7 +23,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  themeColor: '#050711',
+  themeColor: '#101016',
 };
 
 export const metadata: Metadata = {
@@ -155,7 +157,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scroll-smooth`}
     >
-      <body className="min-h-full flex flex-col bg-[#050711] text-white selection:bg-orange-500 selection:text-black">
+      <body className="min-h-full flex flex-col bg-[#101016] text-white">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

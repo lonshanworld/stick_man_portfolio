@@ -9,8 +9,13 @@ export interface CombatSpellPresentation {
 }
 
 const SELF_ACTIONS = new Set<ElementalSpell['action']>([
-  'shield', 'restore', 'cleanse', 'cloak', 'levitate', 'rewind', 'teleport',
+  'transform', 'shield', 'restore', 'cleanse', 'cloak', 'levitate', 'rewind', 'teleport',
 ]);
+
+export function isCombatSupportSpell(spell: ElementalSpell): boolean {
+  return SELF_ACTIONS.has(spell.action)
+    || ['restore', 'shield', 'mobility', 'transform'].includes(spell.castType);
+}
 
 export function isTargetCenteredCombatSpell(spell: ElementalSpell): boolean {
   if (SELF_ACTIONS.has(spell.action) || spell.target === 'self') return false;

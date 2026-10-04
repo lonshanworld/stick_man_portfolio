@@ -5,7 +5,7 @@ interface Position { x: number; y: number }
 
 export type SpellStatus =
   | 'shielded' | 'shieldImpact' | 'recovering' | 'stunned' | 'frozen'
-  | 'rooted' | 'slowed' | 'stasis' | 'silenced';
+  | 'rooted' | 'slowed' | 'stasis' | 'silenced' | 'archangel' | 'demon';
 
 export type SpellPoseKind =
   | 'projectile' | 'heavy' | 'defend' | 'heal' | 'summon' | 'channel'
@@ -36,8 +36,12 @@ export interface SpellPose {
   kind?: SpellPoseKind;
   progress?: number;
   shielded?: boolean;
+  archangelTime?: number;
+  demonTime?: number;
   speedMultiplier?: number;
   casting?: boolean;
+  spellId?: string;
+  castProgress?: number;
 }
 
 const smooth = (n: number) => {
@@ -98,10 +102,12 @@ export class SpellActionSystem {
       const p = Math.min(1, action.elapsed / action.spell.duration);
       const pose: SpellPose = {
         lift: 0, scale: 1, hidden: false, paused: true,
-        kind: this.poseForSpell(action.spell), progress: p, casting: true,
+        kind: this.poseForSpell(action.spell), progress: p, casting: true, spellId: action.spell.id, castProgress: p,
       };
       this.updateCasterMovement(action, pose, p);
-      if (!action.applied && p >= 0.24) {
+      const outcomeSeconds = action.spell.action === 'transform' ? .62 : action.spell.id === 'soil-boulder-catapult' ? 1.35 : action.spell.id === 'trees-root-entanglement' ? .95 : action.spell.id === 'dark-abyssal-grasp' ? .75 : undefined;
+      const outcomeProgress = outcomeSeconds === undefined ? .24 : outcomeSeconds / action.spell.duration;
+      if (!action.applied && p >= outcomeProgress) {
         this.applyOutcome(action);
         action.applied = true;
       }
@@ -198,6 +204,10 @@ export class SpellActionSystem {
 
   private applyOutcome(action: Action) {
     const spellAction = action.spell.action;
+    if (spellAction === 'transform') {
+      this.addStatus(action.caster.id, action.spell.element === 'dark' ? 'demon' : 'archangel', action.spell.statusDuration ?? 7, Math.max(0, action.elapsed - .62));
+      return;
+    }
     if (spellAction === 'shield') {
       this.addStatus(action.caster.id, 'shielded', action.spell.statusDuration || 5);
       return;
@@ -269,12 +279,15 @@ export class SpellActionSystem {
         kind: POSE_FOR_STATUS[strongest.kind],
         progress,
         shielded: statuses.has('shielded'),
+        archangelTime: statuses.get('archangel')?.remaining ?? 0,
+        demonTime: statuses.get('demon')?.remaining ?? 0,
         speedMultiplier: statuses.has('slowed') ? 0.38 : 1,
       });
     }
   }
 
   private poseForSpell(spell: ElementalSpell): SpellPoseKind {
+    if (spell.action === 'transform') return 'summon';
     if (spell.action === 'teleport') return 'teleport';
     if (spell.action === 'levitate') return 'levitate';
     if (spell.action === 'rewind') return 'rewind';
@@ -294,9 +307,10 @@ export class SpellActionSystem {
     this.addStatus(id, status, duration);
   }
 
-  private addStatus(id: string, kind: SpellStatus, duration: number) {
+  private addStatus(id: string, kind: SpellStatus, duration: number, age = 0) {
+    if (age >= duration) return;
     const statuses = this.statuses.get(id) || new Map<SpellStatus, StatusState>();
-    statuses.set(kind, { kind, duration, remaining: duration });
+    statuses.set(kind, { kind, duration, remaining: duration - age });
     this.statuses.set(id, statuses);
   }
 
@@ -322,12 +336,16 @@ export class SpellActionSystem {
       hidden: current.hidden || incoming.hidden, paused: current.paused || incoming.paused,
       kind: incoming.kind || current.kind, progress: incoming.progress ?? current.progress,
       shielded: current.shielded || incoming.shielded,
+      archangelTime: incoming.archangelTime ?? current.archangelTime,
+      demonTime: incoming.demonTime ?? current.demonTime,
       speedMultiplier: Math.min(current.speedMultiplier ?? 1, incoming.speedMultiplier ?? 1),
       casting: current.casting || incoming.casting,
+      spellId: incoming.spellId ?? current.spellId,
+      castProgress: incoming.castProgress ?? current.castProgress,
     });
   }
   private statusPriority(kind: SpellStatus) {
-    return ['shielded', 'silenced', 'slowed', 'recovering', 'rooted', 'stunned', 'frozen', 'stasis', 'shieldImpact'].indexOf(kind);
+    return ['demon', 'archangel', 'shielded', 'silenced', 'slowed', 'recovering', 'rooted', 'stunned', 'frozen', 'stasis', 'shieldImpact'].indexOf(kind);
   }
   private move(entity: StickManEntity, position: Position) {
     entity.docX = entity.targetDocX = this.clampX(position.x);

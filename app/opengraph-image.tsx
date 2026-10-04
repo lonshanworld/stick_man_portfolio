@@ -16,24 +16,29 @@ export default function Image() {
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
-          padding: '72px',
-          color: '#fff0e0',
-          background: 'radial-gradient(circle at 75% 20%, #3a0a00 0%, #08030a 58%, #050711 100%)',
+          justifyContent: 'space-between',
+          padding: '54px 64px',
+          color: '#e9e6dc',
+          background: '#1e1e21',
           fontFamily: 'sans-serif',
         }}
       >
-        <div style={{ display: 'flex', color: '#ff9900', fontSize: 24, letterSpacing: 8 }}>
-          LON SHAN
+        <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 20, borderBottom: '1px solid #55534c', fontSize: 16, letterSpacing: 2 }}>
+          <span>INDEPENDENT MIND. THOUGHTFUL ENGINEERING.</span>
+          <span>BANGKOK / WORLDWIDE</span>
         </div>
-        <div style={{ display: 'flex', marginTop: 24, fontSize: 72, fontWeight: 800, letterSpacing: -2 }}>
-          Full-Stack &amp; Creative
+        <div style={{ display: 'flex', alignItems: 'center', fontSize: 148, fontWeight: 700, letterSpacing: -9 }}>
+          Lon Shan
+          <svg width="100" height="100" viewBox="0 0 100 100" style={{ marginLeft: 24 }}>
+            <g stroke="#fff2c8" strokeWidth="7"><path d="M50 4v92M4 50h92M17 17l66 66M17 83l66-66" /></g>
+          </svg>
         </div>
-        <div style={{ display: 'flex', fontSize: 72, fontWeight: 800, letterSpacing: -2 }}>
-          Software Engineer
+        <div style={{ display: 'flex', flexDirection: 'column', paddingTop: 30, borderTop: '1px solid #55534c' }}>
+          <span style={{ fontSize: 40, letterSpacing: -1 }}>Creative by instinct.</span>
+          <span style={{ fontSize: 44, fontFamily: 'serif', fontStyle: 'italic', color: '#fff2c8', letterSpacing: -1 }}>Steady by design.</span>
         </div>
-        <div style={{ display: 'flex', marginTop: 30, color: '#ffb899', fontSize: 28 }}>
-          Next.js · Flutter · TypeScript · 3D WebGL
+        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#b7b4aa', fontSize: 17 }}>
+          <span>WEB & SYSTEMS / MOBILE / CREATIVE CODE</span><span>LONSHAN.COM</span>
         </div>
       </div>
     ),

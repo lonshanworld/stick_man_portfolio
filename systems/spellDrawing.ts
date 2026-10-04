@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import type { ElementalSpell } from '../data/elementalSpells';
+import { createSpellSurface } from './spellMaterials';
+import { addElementalSpellArt } from './elementalSpellArt';
 
 export interface BuiltSpellEffect {
   root: THREE.Object3D;
@@ -23,6 +25,7 @@ export class SpellDrawing {
   motions: Motion[] = [];
   materials: (THREE.MeshBasicMaterial | THREE.SpriteMaterial)[] = [];
   glowTexture?: THREE.DataTexture;
+  surfaces: THREE.ShaderMaterial[] = [];
   primary: THREE.MeshBasicMaterial;
   secondary: THREE.MeshBasicMaterial;
   white: THREE.MeshBasicMaterial;
@@ -36,11 +39,60 @@ export class SpellDrawing {
 
   material(color: string, opacity = 1, glow = false) {
     const m = new THREE.MeshBasicMaterial({ color, transparent: true, opacity,
-      depthWrite: false, side: THREE.DoubleSide,
+      depthWrite: false, side: THREE.DoubleSide, toneMapped: false,
       blending: glow ? THREE.AdditiveBlending : THREE.NormalBlending });
     m.userData.opacity = opacity;
     this.materials.push(m);
     return m;
+  }
+
+  /** Broad, soft-edged energy sheets supply volume around precise geometry. */
+  ribbon(path: (u: number, t: number) => Point, width: number,
+    parent: THREE.Object3D = this.root, color = this.spell.primaryColor || '#7edfff', opacity = .65,
+    segments = 48) {
+    const material = createSpellSurface(this.spell.element, color, this.spell.secondaryColor || '#fff8e7', opacity);
+    this.surfaces.push(material);
+    const positions = new Float32Array((segments + 1) * 6);
+    const uv = new Float32Array((segments + 1) * 4);
+    const indices: number[] = [];
+    for (let i = 0; i <= segments; i++) {
+      uv.set([i / segments, 0, i / segments, 1], i * 4);
+      if (i < segments) { const k = i * 2; indices.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
+    geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    geometry.setIndex(indices);
+    const ribbon = new THREE.Mesh(geometry, material);
+    ribbon.frustumCulled = false;
+    parent.add(ribbon);
+    const draw = (t: number) => {
+      for (let i = 0; i <= segments; i++) {
+        const u = i / segments, p = path(u, t), next = path(Math.min(1, u + .003), t);
+        const prev = i === segments ? path(Math.max(0, u - .003), t) : p;
+        let nx = -(next[1] - prev[1]), ny = next[0] - prev[0], nz = 0;
+        let length = Math.hypot(nx, ny);
+        if (length < .0001) { nx = 1; ny = 0; nz = 0; length = 1; }
+        const radius = width * (.12 + .88 * Math.sin(u * Math.PI));
+        for (let side = 0; side < 2; side++) {
+          const sign = side ? 1 : -1, k = (i * 2 + side) * 3;
+          positions[k] = p[0] + sign * nx / length * radius;
+          positions[k + 1] = p[1] + sign * ny / length * radius;
+          positions[k + 2] = p[2] + sign * nz * radius;
+        }
+      }
+      geometry.attributes.position.needsUpdate = true;
+    };
+    draw(0);
+    this.motions.push(draw);
+    return ribbon;
+  }
+
+  surface(geometry: THREE.BufferGeometry, color = this.spell.primaryColor || '#7edfff', opacity = .65,
+    parent: THREE.Object3D = this.root) {
+    const material = createSpellSurface(this.spell.element, color, this.spell.secondaryColor || '#fff8e7', opacity);
+    this.surfaces.push(material);
+    const mesh = new THREE.Mesh(geometry, material); parent.add(mesh); return mesh;
   }
 
   mesh(geometry: THREE.BufferGeometry, material = this.primary, parent: THREE.Object3D = this.root) {
@@ -85,6 +137,11 @@ export class SpellDrawing {
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
     geometry.setIndex(indices);
     const mesh = this.mesh(geometry, material, parent);
+    // Glow follows the exact path and inherits all visibility/transform changes.
+    if (material === this.primary || material === this.secondary) {
+      this.ribbon(path, width * (this.spell.element === 'lightning' ? 4 : 2.8), mesh,
+        `#${material.color.getHexString()}`, this.spell.element === 'wind' ? .27 : .42, segments);
+    }
     mesh.renderOrder = material === this.white ? 4 : material === this.secondary ? 3 : 2;
     mesh.frustumCulled = false;
     const tangent = new THREE.Vector3(), normal = new THREE.Vector3(), binormal = new THREE.Vector3();
@@ -185,7 +242,7 @@ export class SpellDrawing {
     this.particles(count, (i, t) => {
       const p = clamp((t - at) / 0.7), a = i * 2.399;
       const r = radius * (1 - Math.pow(1 - p, 2));
-      return [center[0] + Math.cos(a) * r, center[1] + Math.sin(i * 4.7) * r * 0.6 + 12 * Math.sin(p * Math.PI), center[2] + Math.sin(a) * r];
+      return [center[0] + Math.cos(a) * r, center[1] + Math.sin(i * 4.7) * r * .55 + 22 * p - 36 * p * p, center[2] + Math.sin(a) * r];
     }, 1.1, fadingMaterial);
     const cloud = this.root.children[this.root.children.length - 1];
     this.motions.push(t => {
@@ -195,10 +252,15 @@ export class SpellDrawing {
   }
 
   finish(): BuiltSpellEffect {
+    addElementalSpellArt(this);
     const update = (_delta: number, time: number, duration: number) => {
       const p = clamp(time / duration);
       const fade = ease(time / 0.12) * (1 - ease((p - 0.76) / 0.24));
       for (const m of this.materials) m.opacity = m.userData.opacity * fade;
+      for (const m of this.surfaces) {
+        m.uniforms.uTime.value = time;
+        m.uniforms.uOpacity.value = m.userData.opacity * fade;
+      }
       for (const motion of this.motions) motion(time, p);
     };
     update(0, 0, this.spell.duration);

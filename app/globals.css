@@ -49,14 +49,14 @@ html {
 }
 
 body {
-  background: var(--theme-bg);
+  background: #101016;
   background-attachment: fixed;
   color: var(--theme-text);
   min-height: 100vh;
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  font-family: var(--font-geist-sans), sans-serif;
   transition: background 0.8s ease, color 0.5s ease;
 }
 
@@ -156,7 +156,7 @@ body {
   padding-bottom: 7px;
   border-bottom: 1px solid rgba(255,255,255,.1);
   color: rgba(255,255,255,.6);
-  font: 800 9px ui-monospace, SFMono-Regular, Consolas, monospace;
+  font: 800 11px ui-monospace, SFMono-Regular, Consolas, monospace;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
@@ -168,7 +168,7 @@ body {
 .dialogue-thread-participants {
   justify-content: center;
   padding: 8px 0 7px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -188,15 +188,15 @@ body {
   border: 1px solid color-mix(in srgb, var(--message-color) 42%, transparent);
   border-radius: 10px;
   background: color-mix(in srgb, var(--message-color) 10%, rgba(255,255,255,.045));
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
 .dialogue-message.is-first { justify-self: start; border-top-left-radius: 4px; }
 .dialogue-message.is-second { justify-self: end; border-top-right-radius: 4px; }
-.dialogue-message strong { color: var(--message-color); font-size: 9px; letter-spacing: .03em; }
+.dialogue-message strong { color: var(--message-color); font-size: 11px; letter-spacing: .03em; }
 .dialogue-message span { color: rgba(255,255,255,.9); }
-.dialogue-thread-loading { margin: 0; color: rgba(255,255,255,.58); font-size: 10px; text-align: center; }
+.dialogue-thread-loading { margin: 0; color: rgba(255,255,255,.58); font-size: 12px; text-align: center; }
 
 .dialogue-thread-footer {
   justify-content: center;
@@ -204,7 +204,7 @@ body {
   padding-top: 7px;
   border-top: 1px solid rgba(255,255,255,.08);
   color: rgba(255,255,255,.58);
-  font: 9px ui-monospace, SFMono-Regular, Consolas, monospace;
+  font: 11px ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 
 .dialogue-thread-live-dot {
@@ -239,27 +239,17 @@ body {
 }
 
 .fight-opponent-prompt {
-  position: absolute;
-  bottom: 110%;
-  left: 50%;
-  width: 174px;
-  padding: 8px 10px 7px;
-  transform: translateX(-50%);
+  position: relative;
+  margin-top: 10px;
+  padding: 9px 0;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--theme-primary) 72%, white);
-  border-radius: 12px;
-  background: rgba(5, 9, 20, 0.94);
-  box-shadow: 0 8px 24px var(--theme-glow);
-  color: white;
+  border-top: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.8);
   text-align: center;
   pointer-events: none;
-  z-index: 65;
 }
 
-.fight-opponent-prompt strong,
-.fight-opponent-prompt span { display: block; }
-.fight-opponent-prompt strong { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
-.fight-opponent-prompt span { margin-top: 2px; color: rgba(255,255,255,.62); font-size: 8px; }
+.fight-opponent-prompt strong { font-size: 12px; font-weight: 600; }
 .fight-opponent-prompt i {
   position: absolute;
   inset: auto 0 0;
@@ -310,10 +300,10 @@ body {
 }
 
 .fight-modal-close { position: absolute; top: 16px; right: 16px; width: 38px; height: 38px; }
-.fight-kicker { display: flex; justify-content: center; align-items: center; gap: 7px; color: #f2c45b; font-size: 11px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.fight-kicker { display: flex; justify-content: center; align-items: center; gap: 7px; color: #f2c45b; font-size: 13px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
 .fight-confirmation-panel h2 { margin: 8px 0 4px; font-size: clamp(26px, 5vw, 48px); line-height: 1; letter-spacing: -.04em; }
 .fight-confirmation-panel h2 span { display: inline-block; margin: 0 10px; color: #f2c45b; font-size: .55em; font-style: italic; }
-.fight-modal-copy { margin: 10px auto 22px; max-width: 560px; color: rgba(255,255,255,.62); font-size: 13px; }
+.fight-modal-copy { margin: 10px auto 22px; max-width: 560px; color: rgba(255,255,255,.62); font-size: 15px; }
 .fight-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .fight-picker-card {
   --fighter-color: #fff;
@@ -332,15 +322,15 @@ body {
 }
 .fight-picker-card:hover { transform: translateY(-3px); border-color: var(--fighter-color); }
 .fight-picker-card.is-selected { border-color: var(--fighter-color); box-shadow: 0 0 0 2px color-mix(in srgb, var(--fighter-color) 28%, transparent), 0 12px 36px color-mix(in srgb, var(--fighter-color) 22%, transparent); }
-.fight-card-side { color: var(--fighter-color); font-size: 9px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.fight-card-side { color: var(--fighter-color); font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
 .fight-card-symbol { margin: 4px 0; font-size: 34px; filter: drop-shadow(0 0 12px var(--fighter-color)); }
 .fight-picker-card strong { font-size: 20px; }
-.fight-card-title { min-height: 32px; color: rgba(255,255,255,.58); font-size: 11px; }
+.fight-card-title { min-height: 32px; color: rgba(255,255,255,.58); font-size: 13px; }
 .fight-card-stats { display: grid; width: 100%; grid-template-columns: 1fr 1fr; gap: 5px; margin: 10px 0; }
-.fight-card-stats span { padding: 4px; border-radius: 6px; background: rgba(255,255,255,.06); font: 9px ui-monospace, monospace; }
+.fight-card-stats span { padding: 4px; border-radius: 6px; background: rgba(255,255,255,.06); font: 11px ui-monospace, monospace; }
 .fight-card-spells { display: flex; width: 100%; flex-direction: column; gap: 4px; text-align: left; }
-.fight-card-spells > span { display: flex; align-items: center; gap: 5px; overflow: hidden; color: rgba(255,255,255,.74); font-size: 10px; white-space: nowrap; text-overflow: ellipsis; }
-.fight-play-label { margin-top: 13px; padding: 6px 10px; border-radius: 999px; background: var(--fighter-color); color: #071019; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+.fight-card-spells > span { display: flex; align-items: center; gap: 5px; overflow: hidden; color: rgba(255,255,255,.74); font-size: 12px; white-space: nowrap; text-overflow: ellipsis; }
+.fight-play-label { margin-top: 13px; padding: 6px 10px; border-radius: 999px; background: var(--fighter-color); color: #071019; font-size: 12px; font-weight: 900; text-transform: uppercase; }
 .fight-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .fight-primary-button,
 .fight-secondary-button,
@@ -352,7 +342,7 @@ body {
   gap: 7px;
   padding: 10px 18px;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 850;
   cursor: pointer;
 }
@@ -382,12 +372,25 @@ body {
 .fight-stage-pylon.left { left: 7%; color: color-mix(in srgb, var(--player-color) 70%, white); }
 .fight-stage-pylon.right { right: 7%; color: color-mix(in srgb, var(--opponent-color) 70%, white); }
 .fight-arena-canvas { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; }
+.fight-impact-layer { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
+.fight-damage-number { position: absolute; color: #fff0cf; font: 900 28px/1 monospace; text-shadow: 0 2px 0 #39151b, 0 0 14px #ff8844; animation: fight-damage-rise .75s ease-out forwards; }
+.fight-damage-number.heavy { color: #ffce70; font-size: 40px; }
+.fight-damage-number.healing { color: #9fffc7; text-shadow: 0 0 14px #28b470; }
+.fight-damage-number.blocked { color: #a9e8ff; font-size: 19px; text-shadow: 0 0 14px #289bc9; }
+.fight-shield-status { margin-top: 5px; color: #a9e8ff; font: 14px/1.5 monospace; }
+.fight-shield-track { display: block; height: 4px; background: #17384c; }
+.fight-shield-track i { display: block; height: 100%; background: #91e5ff; transition: width .08s linear; }
+.fight-condition-status { display: flex; gap: 8px; flex-wrap: wrap; color: #ffd6a0; font: 13px/1.5 monospace; }
+.fight-hit-spark { position: absolute; width: 38px; height: 38px; border: 3px solid #ffe0a0; border-radius: 50%; box-shadow: 0 0 22px #ffaa50, inset 0 0 14px #fff4d0; animation: fight-hit-spark .25s ease-out forwards; }
+@keyframes fight-hit-spark { from { opacity: 1; transform: translate(-50%, -50%) scale(.4); } to { opacity: 0; transform: translate(-50%, -50%) scale(2); } }
+@keyframes fight-damage-rise { from { opacity: 1; transform: translate(-50%, 0) scale(1.2); } to { opacity: 0; transform: translate(-50%, -55px) scale(.9); } }
+@media (prefers-reduced-motion: reduce) { .fight-damage-number { animation: none; } }
 .fight-hud { position: absolute; inset: max(14px, env(safe-area-inset-top)) 62px auto; z-index: 4; display: grid; grid-template-columns: minmax(0,1fr) 74px minmax(0,1fr); gap: 16px; align-items: start; pointer-events: none; }
 .fight-fighter-meters.right { text-align: right; }
 .fight-name-line { display: flex; align-items: center; gap: 7px; min-height: 25px; }
 .fight-fighter-meters.right .fight-name-line { flex-direction: row-reverse; }
-.fight-name-line strong { overflow: hidden; font-size: clamp(12px, 2vw, 18px); text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
-.fight-name-line small { padding: 2px 5px; border-radius: 4px; background: rgba(255,255,255,.13); font-size: 8px; }
+.fight-name-line strong { overflow: hidden; font-size: calc(clamp(12px, 2vw, 18px) + 2px); text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
+.fight-name-line small { padding: 2px 5px; border-radius: 4px; background: rgba(255,255,255,.13); font-size: 10px; }
 .fight-health-track,
 .fight-energy-track { position: relative; height: 15px; overflow: hidden; border: 2px solid rgba(255,255,255,.68); border-radius: 4px; background: rgba(0,0,0,.72); box-shadow: 0 4px 15px rgba(0,0,0,.45); }
 .fight-energy-track { height: 7px; margin-top: 4px; border-width: 1px; }
@@ -398,18 +401,22 @@ body {
 .fight-fighter-meters.right .fight-energy-track span { margin-left: auto; }
 .fight-spell-cooldowns { display: flex; gap: 5px; margin-top: 5px; }
 .fight-fighter-meters.right .fight-spell-cooldowns { justify-content: flex-end; }
-.fight-spell-cooldowns > span { position: relative; display: grid; width: 24px; height: 24px; place-items: center; overflow: hidden; border: 1px solid rgba(255,255,255,.18); border-radius: 6px; background: rgba(0,0,0,.52); font-size: 12px; }
+.fight-spell-cooldowns > span { position: relative; display: grid; width: 30px; height: 30px; place-items: center; overflow: hidden; border: 1px solid color-mix(in srgb, var(--spell-color) 50%, #5c5263); border-radius: 4px; background: radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--spell-color) 28%, #0c101c), #080b13 85%); color: var(--spell-accent); box-shadow: inset 0 0 7px color-mix(in srgb, var(--spell-color) 15%, transparent); }
+.element-sigil { flex-shrink: 0; filter: drop-shadow(0 0 3px currentColor); }
+.ability-portrait { display: grid; width: 35px; height: 35px; place-items: center; border: 1px solid currentColor; border-radius: 3px 9px 3px 9px; background: radial-gradient(ellipse at bottom, #ffffff14, #080b16); }
+.fight-mobile-spells button { display: grid; place-items: center; border-color: color-mix(in srgb, var(--spell-color) 55%, #586070); border-radius: 5px 12px 5px 12px; color: var(--spell-accent); background: radial-gradient(ellipse at bottom, color-mix(in srgb, var(--spell-color) 28%, #0c101c), #080b13 85%); box-shadow: inset 0 1px 0 #ffffff20, 0 0 12px color-mix(in srgb, var(--spell-color) 12%, transparent); }
+.fight-mobile-spells button:focus-visible { outline: 2px solid var(--spell-accent); outline-offset: 3px; }
 .fight-spell-cooldowns i { position: absolute; inset: 0; transform-origin: bottom; background: rgba(0,0,0,.72); }
 .fight-timer { display: flex; flex-direction: column; align-items: center; padding: 5px; border: 1px solid rgba(255,255,255,.23); border-radius: 10px; background: rgba(2,5,13,.78); }
-.fight-timer small { color: rgba(255,255,255,.5); font-size: 7px; letter-spacing: .12em; }
+.fight-timer small { color: rgba(255,255,255,.5); font-size: 9px; letter-spacing: .12em; }
 .fight-timer strong { font: 900 30px/1 ui-monospace, monospace; }
 .fight-timer.is-urgent strong { color: #ff4a4a; }
 .fight-pause-button { position: absolute; z-index: 5; top: max(16px, env(safe-area-inset-top)); right: 14px; width: 38px; height: 38px; }
 .fight-spell-callout { position: absolute; z-index: 5; top: clamp(96px, 15vh, 142px); display: flex; min-width: 190px; flex-direction: column; padding: 8px 18px 9px; border-block: 1px solid rgba(255,255,255,.28); background: linear-gradient(90deg, transparent, rgba(3,6,15,.78) 18% 82%, transparent); text-align: center; text-shadow: 0 2px 10px #000; pointer-events: none; animation: fightSpellCallout 1.05s ease-out both; }
 .fight-spell-callout.player { left: 12%; color: color-mix(in srgb, var(--player-color) 72%, white); }
 .fight-spell-callout.opponent { right: 12%; color: color-mix(in srgb, var(--opponent-color) 72%, white); }
-.fight-spell-callout small { color: rgba(255,255,255,.52); font-size: 8px; font-weight: 850; letter-spacing: .18em; text-transform: uppercase; }
-.fight-spell-callout strong { overflow: hidden; font-size: clamp(13px, 1.7vw, 21px); font-style: italic; font-weight: 950; letter-spacing: .045em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.fight-spell-callout small { color: rgba(255,255,255,.52); font-size: 10px; font-weight: 850; letter-spacing: .18em; text-transform: uppercase; }
+.fight-spell-callout strong { overflow: hidden; font-size: calc(clamp(13px, 1.7vw, 21px) + 2px); font-style: italic; font-weight: 950; letter-spacing: .045em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 @keyframes fightSpellCallout { 0% { opacity: 0; transform: translateY(8px) scaleX(.72); } 16%, 72% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-5px); } }
 .fight-intro { position: absolute; inset: 0; z-index: 6; display: grid; place-content: center; gap: 14px; text-align: center; pointer-events: none; text-shadow: 0 4px 20px #000; }
 .fight-intro > div { display: flex; align-items: center; gap: clamp(12px, 4vw, 42px); font-size: clamp(25px, 6vw, 64px); font-weight: 950; text-transform: uppercase; }
@@ -417,18 +424,18 @@ body {
 .fight-intro > strong { font-size: clamp(48px, 12vw, 112px); font-style: italic; }
 .fight-intro small { color: rgba(255,255,255,.62); font-weight: 750; letter-spacing: .08em; }
 .fight-touch-controls { position: absolute; inset: auto 18px max(18px, env(safe-area-inset-bottom)); z-index: 5; display: flex; justify-content: space-between; pointer-events: none; }
-.fight-touch-controls button { min-width: 54px; min-height: 48px; border: 1px solid rgba(255,255,255,.25); border-radius: 14px; background: rgba(6,10,22,.76); box-shadow: inset 0 1px rgba(255,255,255,.1); color: white; font-size: 11px; font-weight: 900; pointer-events: auto; touch-action: none; }
+.fight-touch-controls button { min-width: 54px; min-height: 48px; border: 1px solid rgba(255,255,255,.25); border-radius: 14px; background: rgba(6,10,22,.76); box-shadow: inset 0 1px rgba(255,255,255,.1); color: white; font-size: 13px; font-weight: 900; pointer-events: auto; touch-action: none; }
 .fight-touch-controls button:active { transform: scale(.94); background: color-mix(in srgb, var(--player-color) 35%, #080c18); }
 .fight-touch-controls button:disabled { opacity: .35; }
 .fight-movement-controls,
 .fight-attack-controls,
 .fight-mobile-spells { display: flex; align-items: flex-end; gap: 8px; }
 .fight-mobile-spells button { position: relative; min-width: 45px; font-size: 18px; }
-.fight-mobile-spells small { position: absolute; right: 4px; bottom: 3px; color: rgba(255,255,255,.55); font-size: 8px; }
+.fight-mobile-spells small { position: absolute; right: 4px; bottom: 3px; color: rgba(255,255,255,.55); font-size: 10px; }
 .fight-result-backdrop { z-index: 12; background: rgba(2,5,13,.67); }
 .fight-result-panel { display: flex; width: min(380px, 92vw); flex-direction: column; align-items: center; gap: 11px; padding: 28px; border: 1px solid rgba(255,255,255,.18); border-radius: 22px; background: linear-gradient(145deg, rgba(23,30,51,.98), rgba(5,8,18,.98)); box-shadow: 0 24px 80px rgba(0,0,0,.7); text-align: center; animation: fightModalIn .24s ease-out; }
 .fight-result-panel h2 { margin: 0 0 8px; font-size: 28px; }
-.fight-result-panel p { margin: 0; color: #f2ce67; font-size: 10px; font-weight: 900; letter-spacing: .16em; }
+.fight-result-panel p { margin: 0; color: #f2ce67; font-size: 12px; font-weight: 900; letter-spacing: .16em; }
 .fight-result-panel button { width: 100%; }
 
 @media (min-width: 900px) and (hover: hover) {
@@ -441,22 +448,22 @@ body {
   .fight-picker-card { padding: 12px 7px; }
   .fight-card-symbol { font-size: 25px; }
   .fight-picker-card strong { font-size: 15px; }
-  .fight-card-title { font-size: 9px; }
-  .fight-card-spells > span { font-size: 8px; }
+  .fight-card-title { font-size: 11px; }
+  .fight-card-spells > span { font-size: 10px; }
   .fight-modal-actions { flex-direction: column-reverse; }
   .fight-hud { inset-inline: 8px; grid-template-columns: minmax(0,1fr) 50px minmax(0,1fr); gap: 6px; }
   .fight-timer strong { font-size: 24px; }
-  .fight-pause-button { top: 83px; right: 8px; }
-  .fight-spell-callout { top: 100px; min-width: 135px; max-width: 46vw; padding-inline: 9px; }
+  .fight-pause-button { top: 104px; right: 8px; }
+  .fight-spell-callout { top: 150px; min-width: 135px; max-width: 46vw; padding-inline: 9px; }
   .fight-spell-callout.player { left: 2%; }
   .fight-spell-callout.opponent { right: 2%; }
   .fight-touch-controls { inset-inline: 8px; }
-  .fight-touch-controls button { min-width: 42px; min-height: 45px; padding: 3px; font-size: 9px; }
+  .fight-touch-controls button { min-width: 42px; min-height: 45px; padding: 3px; font-size: 11px; }
   .fight-movement-controls, .fight-attack-controls, .fight-mobile-spells { gap: 4px; }
   .fight-attack-controls { flex-wrap: wrap; max-width: 190px; justify-content: flex-end; }
   .fight-mobile-spells { order: -1; width: 100%; justify-content: flex-end; }
   .fight-mobile-spells button { min-width: 40px; font-size: 15px; }
-  .fight-intro small { padding: 0 22px; font-size: 8px; }
+  .fight-intro small { padding: 0 22px; font-size: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -465,3 +472,22 @@ body {
   .fight-result-panel { animation: none; }
   .fight-picker-card { transition: none; }
 }
+
+.fight-archangel-status {
+  color: #fff3cf;
+  font-size: calc(clamp(8px, 1.05vw, 12px) + 2px);
+  padding: 4px 6px;
+  background: linear-gradient(90deg, #8c6a283b, #fff1c910);
+  border-left: 2px solid #efd393;
+  text-shadow: 0 0 10px #efd39366;
+}
+.fight-archangel-status strong { margin-right: 5px; letter-spacing: .06em; }
+
+.fight-demon-status {
+  color: #d2c1d6;
+  font-size: calc(clamp(8px, 1.05vw, 12px) + 2px);
+  padding: 4px 6px;
+  background: linear-gradient(90deg, #53354d77, #65885222);
+  border-left: 2px solid #9da779;
+}
+.fight-demon-status strong { margin-right: 5px; letter-spacing: .06em; }

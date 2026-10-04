@@ -37,6 +37,7 @@ export interface StickManDefinition {
   title: string;
   symbol: string;
   primaryColor: string;
+  bodyColor: string;
   secondaryColor: string;
   glowColor: string;
   shadowColor: string;

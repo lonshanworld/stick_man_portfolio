@@ -36,7 +36,7 @@ export const StickManDojo: React.FC<StickManDojoProps> = ({
           soundEngine.playClick();
           setIsOpen(!isOpen);
         }}
-        className="flex items-center gap-2 px-3.5 py-2 rounded-2xl backdrop-blur-xl border shadow-xl text-xs font-bold uppercase tracking-wider text-white transition-all duration-300 hover:scale-105 cursor-pointer"
+        className="flex items-center gap-2 px-3.5 py-2 rounded-2xl backdrop-blur-xl border shadow-xl text-[14px] font-bold uppercase tracking-wider text-white transition-all duration-300 hover:scale-105 cursor-pointer"
         style={{
           backgroundColor: 'rgba(12, 16, 30, 0.88)',
           borderColor: def.primaryColor,
@@ -46,7 +46,7 @@ export const StickManDojo: React.FC<StickManDojoProps> = ({
         <Swords size={16} style={{ color: def.primaryColor }} />
         <span>Stick Man Dojo</span>
         <span
-          className="px-1.5 py-0.5 rounded text-[9px] font-mono"
+          className="px-1.5 py-0.5 rounded text-[11px] font-mono"
           style={{ backgroundColor: `${def.primaryColor}30`, color: def.secondaryColor }}
         >
           LVL 99
@@ -68,12 +68,12 @@ export const StickManDojo: React.FC<StickManDojoProps> = ({
             <div className="flex items-center gap-2">
               <span className="text-xl">{def.symbol}</span>
               <div>
-                <h4 className="text-sm font-bold">{def.name}</h4>
-                <p className="text-[10px] text-white/60">{def.weaponOrFocus}</p>
+                <h4 className="text-[16px] font-bold">{def.name}</h4>
+                <p className="text-[12px] text-white/60">{def.weaponOrFocus}</p>
               </div>
             </div>
             <span
-              className="text-[10px] font-mono uppercase px-2 py-0.5 rounded font-bold"
+              className="text-[12px] font-mono uppercase px-2 py-0.5 rounded font-bold"
               style={{ backgroundColor: `${def.primaryColor}25`, color: def.secondaryColor }}
             >
               {def.id}
@@ -81,7 +81,7 @@ export const StickManDojo: React.FC<StickManDojoProps> = ({
           </div>
 
           {/* Stick Man Combat Attributes */}
-          <div className="space-y-2 mb-4 text-[11px]">
+          <div className="space-y-2 mb-4 text-[13px]">
             <div>
               <div className="flex justify-between text-white/70 mb-1">
                 <span>Speed / FPS</span>
@@ -139,7 +139,7 @@ export const StickManDojo: React.FC<StickManDojoProps> = ({
           <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/10">
             <button
               onClick={() => handleAction('super')}
-              className="py-2 px-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow"
+              className="py-2 px-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow"
               style={{
                 backgroundColor: `${def.primaryColor}30`,
                 border: `1px solid ${def.primaryColor}`,
@@ -152,7 +152,7 @@ export const StickManDojo: React.FC<StickManDojoProps> = ({
 
             <button
               onClick={() => handleAction('burst')}
-              className="py-2 px-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow"
+              className="py-2 px-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow"
               style={{
                 background: `linear-gradient(135deg, ${def.primaryColor}, ${def.secondaryColor})`,
                 color: '#fff',

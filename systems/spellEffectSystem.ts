@@ -1,3 +1,5 @@
+import { createCosmicMaterial } from './spaceCosmos';
+import { createHealingBoundaryGeometry } from './healingVitality';
 import * as THREE from 'three';
 import { ELEMENTAL_SPELLS, type ElementalSpell } from '../data/elementalSpells';
 import {
@@ -25,10 +27,10 @@ import {
   buildIronwoodSlam,
   buildAbyssalGrasp,
   buildShadowPhantomWave,
-  buildDarkEclipseNova,
+  buildLuciferAscension,
   buildSolarDawn,
   buildSunburstLance,
-  buildSupernovaFlare,
+  buildArchangelAscension,
   buildMeteorShower,
   buildCosmicRay,
   buildPlanetaryRings,
@@ -46,6 +48,7 @@ import {
   buildVoidCollapse,
 } from './spellMeshBuilders';
 import { isUltimateSpell } from './spellPresentation';
+import { createSpellSurface } from './spellMaterials';
 
 interface ActiveSpell {
   group: THREE.Group;
@@ -59,6 +62,9 @@ interface ActiveSpell {
 export interface SpellEffectHandle {
   setPosition: (x: number, y: number) => void;
   isAlive: () => boolean;
+  stop: () => void;
+  setHeading: (heading: number) => void;
+  getHitAreas: () => Array<{ minX: number; maxX: number; minY: number; maxY: number }>;
 }
 
 type SpellBuilder = (spell: ElementalSpell, heading: number, distance: number) => BuiltSpellEffect;
@@ -80,27 +86,27 @@ export const SPELL_BUILDERS: Record<string, SpellBuilder> = {
   'wind-tornado-gale': spell => buildTornadoGale(spell),
   'wind-zephyr-blades': (spell, heading) => buildZephyrBlades(spell, heading),
   'wind-aero-burst': spell => buildAeroShockwave(spell),
-  'soil-bedrock-fissure': (spell, heading) => buildBedrockFissure(spell, heading),
-  'soil-boulder-catapult': (spell, heading) => buildBoulderCatapult(spell, heading),
+  'soil-bedrock-fissure': (spell, heading, distance) => buildBedrockFissure(spell, heading, distance),
+  'soil-boulder-catapult': (spell, heading, distance) => buildBoulderCatapult(spell, heading, distance),
   'soil-fortress-bastion': spell => buildFortressBastion(spell),
-  'trees-root-entanglement': (spell, heading) => buildRootEntanglement(spell, heading),
+  'trees-root-entanglement': (spell, heading, distance) => buildRootEntanglement(spell, heading, distance),
   'trees-spore-bloom': spell => buildSporeBloom(spell),
   'trees-ironwood-slam': spell => buildIronwoodSlam(spell),
   'dark-abyssal-grasp': spell => buildAbyssalGrasp(spell),
-  'dark-phantom-wave': (spell, heading) => buildShadowPhantomWave(spell, heading),
-  'dark-eclipse-nova': spell => buildDarkEclipseNova(spell),
+  'dark-phantom-wave': (spell, heading, distance) => buildShadowPhantomWave(spell, heading, distance),
+  'dark-eclipse-nova': spell => buildLuciferAscension(spell),
   'light-solar-dawn': spell => buildSolarDawn(spell),
-  'light-sunburst-lance': (spell, heading) => buildSunburstLance(spell, heading),
-  'light-supernova-flare': spell => buildSupernovaFlare(spell),
+  'light-sunburst-lance': (spell, heading, distance) => buildSunburstLance(spell, heading, distance),
+  'light-supernova-flare': spell => buildArchangelAscension(spell),
   'space-meteor-shower': spell => buildMeteorShower(spell),
   'space-cosmic-ray': (spell, heading, distance) => buildCosmicRay(spell, heading, distance),
   'space-planetary-rings': spell => buildPlanetaryRings(spell),
   'time-chrono-rewind': spell => buildChronoRewind(spell),
   'time-gear-barrage': spell => buildGearBarrage(spell),
   'time-stasis-field': spell => buildStasisField(spell),
-  'robot-hyper-beam': (spell, heading) => buildHyperBeam(spell, heading),
+  'robot-hyper-beam': (spell, heading, distance) => buildHyperBeam(spell, heading, distance),
   'robot-overclock-grid': spell => buildOverclockGrid(spell),
-  'robot-missile-salvo': (spell, heading) => buildMissileSalvo(spell, heading),
+  'robot-missile-salvo': (spell, heading, distance) => buildMissileSalvo(spell, heading, distance),
   'healing-sakura-sanctuary': spell => buildSakuraSanctuary(spell),
   'healing-petal-breeze': spell => buildPetalBreeze(spell),
   'healing-vitality-rain': spell => buildVitalityRain(spell),
@@ -150,6 +156,7 @@ export class SpellEffectSystem {
     presentationScale = 1,
     exactOrigin = false,
     combatRadiusPixels = 0,
+    combatHoldSeconds = 0,
   ): SpellEffectHandle | null {
     if (typeof document !== 'undefined' && document.hidden) return null;
     while (this.activeSpells.length >= this.maxActiveSpells) {
@@ -175,31 +182,28 @@ export class SpellEffectSystem {
 
     const builder = SPELL_BUILDERS[spell.id];
     if (!builder) throw new Error(`No spell animation registered for ${spell.id}`);
-    const builtEffect = builder(spell, travelHeading, travelDistance);
+    // Robot ordnance travels to the requested world-space target despite presentation scaling.
+    const localTravel = spell.element === 'robot' ? travelDistance / finalScale : travelDistance;
+    const builtEffect = builder(spell, travelHeading, localTravel);
     spellGroup.add(builtEffect.root);
-    let combatAreaMaterial: THREE.MeshBasicMaterial | null = null;
+    let combatAreaMaterial: THREE.ShaderMaterial | null = null;
     let combatArea: THREE.Mesh | null = null;
-    if (combatRadiusPixels > 0) {
+    if (combatRadiusPixels > 0 && spell.element !== 'robot') {
       const localRadius = combatRadiusPixels / finalScale;
-      combatAreaMaterial = new THREE.MeshBasicMaterial({
-        color: spell.secondaryColor || spell.primaryColor || '#ffffff',
-        transparent: true,
-        opacity: 0.42,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending,
-      });
-      combatAreaMaterial.userData.opacity = 0.42;
+      combatAreaMaterial = spell.element === 'space' ? createCosmicMaterial('metric', .35) : createSpellSurface(spell.element,
+        spell.primaryColor || '#ffffff', spell.secondaryColor || '#ffffff', .24);
       combatArea = new THREE.Mesh(
-        new THREE.RingGeometry(localRadius * 0.92, localRadius, 64),
+        spell.element === 'healing' ? createHealingBoundaryGeometry(localRadius)
+          : new THREE.RingGeometry(localRadius * .975, localRadius, 64),
         combatAreaMaterial,
       );
       combatArea.position.set(0, 1, -3);
+      combatArea.rotation.x = -Math.PI / 2;
       combatArea.renderOrder = 1;
       spellGroup.add(combatArea);
     }
     if (this.reducedMotion) {
-      spellGroup.scale.multiplyScalar(0.82);
+      if (!exactOrigin) spellGroup.scale.multiplyScalar(0.82);
       builtEffect.root.traverse(node => {
         if (node instanceof THREE.InstancedMesh && node.count > 20) node.count = Math.ceil(node.count * 0.45);
       });
@@ -211,17 +215,26 @@ export class SpellEffectSystem {
       group: spellGroup,
       spell,
       elapsed: 0,
-      duration: spell.duration,
+      duration: combatHoldSeconds > 0 ? combatHoldSeconds : spell.duration,
       update: (deltaSec: number) => {
         activeSpell.elapsed += deltaSec;
 
         // Run bespoke spell frame update
-        builtEffect.update(deltaSec, activeSpell.elapsed, activeSpell.duration);
+        const elapsed = activeSpell.elapsed;
+        // Wards form at normal speed, remain fully visible while protecting,
+        // then fade at expiry instead of vanishing halfway through their status.
+        const progress = combatHoldSeconds > 0
+          ? elapsed < spell.duration * .55 ? elapsed / spell.duration
+            : elapsed < activeSpell.duration - .25 ? .55
+              : .76 + .24 * Math.min(1, (elapsed - activeSpell.duration + .25) / .25)
+          : elapsed / activeSpell.duration;
+        builtEffect.update(deltaSec, elapsed, progress > 0 ? elapsed / progress : spell.duration);
         if (combatArea && combatAreaMaterial) {
           const progress = Math.min(1, activeSpell.elapsed / activeSpell.duration);
           const pulse = 1 + Math.sin(activeSpell.elapsed * 8) * 0.035;
           combatArea.scale.setScalar(pulse);
-          combatAreaMaterial.opacity = 0.42 * Math.min(1, activeSpell.elapsed / 0.16) * (1 - Math.max(0, (progress - 0.72) / 0.28));
+          combatAreaMaterial.uniforms.uTime.value = activeSpell.elapsed;
+          combatAreaMaterial.uniforms.uOpacity.value = .24 * Math.min(1, activeSpell.elapsed / .16) * (1 - Math.max(0, (progress - .72) / .28));
         }
 
         return activeSpell.elapsed < activeSpell.duration;
@@ -234,11 +247,56 @@ export class SpellEffectSystem {
     };
 
     this.activeSpells.push(activeSpell);
+    const bounds = new THREE.Box3();
+    const instanceMatrix = new THREE.Matrix4();
+    const worldMatrix = new THREE.Matrix4();
     return {
+      stop: () => {
+        if (!alive) return;
+        activeSpell.dispose();
+        this.activeSpells = this.activeSpells.filter(value => value !== activeSpell);
+      },
+      setHeading: heading => { if (alive) builtEffect.root.rotation.y = Math.PI - heading; },
       setPosition: (x: number, y: number) => {
         if (alive) spellGroup.position.set(x, y, 0);
       },
       isAlive: () => alive,
+      getHitAreas: () => {
+        const areas: Array<{ minX: number; maxX: number; minY: number; maxY: number }> = [];
+        if (!alive) return areas;
+        spellGroup.updateWorldMatrix(true, true);
+        // Individual visible mesh footprints preserve gaps between bolts and shards.
+        spellGroup.traverseVisible(node => {
+          if (!(node instanceof THREE.Mesh)) return;
+          for (let parent: THREE.Object3D | null = node; parent; parent = parent.parent) {
+            if (parent.userData.combatContact === false) return;
+          }
+          const materials = Array.isArray(node.material) ? node.material : [node.material];
+          if (!materials.some(material => {
+            const shader = material as THREE.ShaderMaterial;
+            const opacity = shader.uniforms?.uOpacity?.value ?? material.opacity;
+            return material.visible && opacity > .08;
+          })) return;
+          const positions = node.geometry.getAttribute('position');
+          if (!node.geometry.boundingBox || (positions instanceof THREE.BufferAttribute && positions.usage === THREE.DynamicDrawUsage)) {
+            node.geometry.computeBoundingBox();
+          }
+          if (!node.geometry.boundingBox) return;
+          if (node instanceof THREE.InstancedMesh) {
+            for (let index = 0; index < node.count; index++) {
+              node.getMatrixAt(index, instanceMatrix);
+              worldMatrix.multiplyMatrices(node.matrixWorld, instanceMatrix);
+              bounds.copy(node.geometry.boundingBox).applyMatrix4(worldMatrix);
+              if (!bounds.isEmpty()) areas.push({ minX: bounds.min.x, maxX: bounds.max.x, minY: bounds.min.y, maxY: bounds.max.y });
+            }
+            return;
+          }
+          bounds.copy(node.geometry.boundingBox).applyMatrix4(node.matrixWorld);
+          if (bounds.isEmpty()) return;
+          areas.push({ minX: bounds.min.x, maxX: bounds.max.x, minY: bounds.min.y, maxY: bounds.max.y });
+        });
+        return areas;
+      },
     };
   }
 

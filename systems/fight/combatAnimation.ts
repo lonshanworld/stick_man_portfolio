@@ -1,7 +1,20 @@
+import { healingCastPose } from '../healingCastPose';
+import { updateHealingPower } from '../healingVitality';
+import { robotCastPose } from '../robotCastPose';
+import { updateTimePower } from '../timeChronology';
+import { timeCastPose } from '../timeCastPose';
+import { spaceCastPose } from '../spaceCastPose';
+import { updateSpacePower } from '../spaceCosmos';
+import { updateFallenLucifer } from '../fallenLucifer';
+import { updateArchangelMichael } from '../archangelMichael';
+import { lightCastPose } from '../lightCastPose';
 import * as THREE from 'three';
 import type { StickMan3DCharacter } from '../../types';
 import type { FighterState } from './types';
 import { updateHandMagicSeal } from '../magicSeal3D';
+import { soilCastPose, soilCombatTiming } from '../soilCastPose';
+import { treeCastPose, treeCombatTiming } from '../treeCastPose';
+import { darkCastPose, darkCombatTiming } from '../darkCastPose';
 
 interface CombatPose {
   bodyY: number;
@@ -123,14 +136,22 @@ function applyKick(pose: CombatPose, fighter: FighterState) {
 
 function applySpellCast(pose: CombatPose, fighter: FighterState) {
   const index = Math.max(0, Number(fighter.action.slice(-1)) - 1);
-  const timings = [
+  const defaultTimings = [
     { startup: 0.3, active: 0.18, recovery: 0.35 },
     { startup: 0.42, active: 0.22, recovery: 0.48 },
     { startup: 0.62, active: 0.3, recovery: 0.72 },
   ][index];
+  const timings = { ...defaultTimings, ...soilCombatTiming(fighter.spells[index]?.id), ...treeCombatTiming(fighter.spells[index]?.id), ...darkCombatTiming(fighter.spells[index]?.id) };
   const { windup, strike } = actionMotion(fighter.actionTime, timings.startup, timings.active, timings.recovery);
   const charge = Math.max(windup, strike);
-  const castType = fighter.spells[index]?.castType;
+  const spell = fighter.spells[index];
+  if (spell?.element === 'healing' || spell?.element === 'time' || spell?.element === 'robot' || spell?.element === 'soil' || spell?.element === 'trees' || spell?.element === 'dark' || spell?.element === 'light' || spell?.element === 'space') {
+    Object.assign(pose, (spell.element === 'healing' ? healingCastPose : spell.element === 'time' ? timeCastPose : spell.element === 'robot' ? robotCastPose : spell.element === 'space' ? spaceCastPose : spell.element === 'light' ? lightCastPose : spell.element === 'dark' ? darkCastPose : spell.element === 'trees' ? treeCastPose : soilCastPose)(spell.id, fighter.actionTime / (timings.startup + timings.active + timings.recovery)));
+    pose.coreScale = 1 + charge * .2;
+    pose.sealScale = 1 + charge * .12;
+    return;
+  }
+  const castType = spell?.castType;
   pose.bodyX += -0.12 * windup + 0.22 * strike;
   pose.bodyY += Math.sin(clamp01(fighter.actionTime / timings.startup) * Math.PI) * 0.08;
   pose.coreScale = 1 + charge * (0.5 + index * 0.16);
@@ -267,6 +288,11 @@ export function applyCombatAnimation(
     response = 9;
   }
 
+  if (fighter.rootTime > 0 && fighter.stasisTime <= 0) {
+    pose.bodyY = .52;
+    pose.leftHip = .1; pose.rightHip = -.1;
+    pose.leftKnee = .24; pose.rightKnee = .24;
+  }
   const body = char.bodyGroup;
   body.position.y = damp(body.position.y, pose.bodyY, delta, response);
   body.rotation.x = damp(body.rotation.x, pose.bodyX, delta, response);
@@ -284,14 +310,37 @@ export function applyCombatAnimation(
   char.leftLeg.knee.rotation.x = damp(char.leftLeg.knee.rotation.x, pose.leftKnee, delta, response);
   char.rightLeg.knee.rotation.x = damp(char.rightLeg.knee.rotation.x, pose.rightKnee, delta, response);
 
+  updateArchangelMichael(char, fighter.archangelTime, time);
+  updateFallenLucifer(char, fighter.demonTime, time, char.group.userData.poisonRadius);
   const coreScale = damp(char.powerCoreMesh.scale.x, pose.coreScale, delta, 12);
   char.powerCoreMesh.scale.setScalar(coreScale);
   const sealScale = damp(char.magicSealMesh.scale.x, pose.sealScale, delta, 11);
   char.magicSealMesh.scale.set(sealScale, sealScale, 1);
+  updateHealingPower(char, time);
+  updateTimePower(char, time, fighter.shieldTime > 0);
+  updateSpacePower(char, time, fighter.shieldTime > 0);
+  char.headElementGroup.userData.updateRobot?.(time);
+  char.bodyElementGroup.userData.updateRobot?.(time);
+  char.magicSealMesh.userData.updateRobot?.(time);
+  char.magicSealMesh.userData.updateLight?.(time, .5);
+  char.headElementGroup.userData.updateLight?.(time);
+  char.bodyElementGroup.userData.updateLight?.(time);
+  char.headElementGroup.userData.updateFire?.(time);
+  char.headElementGroup.userData.updateWater?.(time);
+  char.headElementGroup.userData.updateLightning?.(time);
+  char.headElementGroup.userData.updateIce?.(time);
+  char.headElementGroup.userData.updateWind?.(time);
+  char.headElementGroup.userData.updateSoil?.(time);
+  char.headElementGroup.userData.updateTrees?.(time);
+  char.bodyElementGroup.userData.updateTrees?.(time);
+  char.headElementGroup.userData.updateDark?.(time);
+  char.bodyElementGroup.userData.updateDark?.(time);
   if (action !== 'stasis') {
-    char.headElementGroup.rotation.y += delta * 1.2;
-    char.bodyElementGroup.rotation.y -= delta * 0.95;
-    char.magicSealMesh.rotation.z += delta * (action.startsWith('spell') ? 4.4 : 0.72);
+    if (char.element !== 'robot' && char.element !== 'healing' && char.element !== 'soil' && char.element !== 'trees' && char.element !== 'dark' && char.element !== 'light' && char.element !== 'time' && char.element !== 'space') {
+      char.headElementGroup.rotation.y += delta * 1.2;
+      char.bodyElementGroup.rotation.y -= delta * 0.95;
+    }
+    if (char.element !== 'robot' && char.element !== 'healing' && char.element !== 'light' && char.element !== 'time' && char.element !== 'space') char.magicSealMesh.rotation.z += delta * (action.startsWith('spell') ? 4.4 : 0.72);
   }
   updateHandMagicSeal(
     char.handMagicSeal,

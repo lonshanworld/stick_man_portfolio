@@ -53,8 +53,18 @@ export interface FighterState extends FighterConfig {
   hitStun: number;
   invulnerable: number;
   shieldTime: number;
+  shieldHealth: number;
+  shieldMaxHealth: number;
+  shieldSpellId: string | null;
+  archangelTime: number;
+  demonTime: number;
+  demonPoisonClock: number;
   slowTime: number;
   stasisTime: number;
+  freezeTime: number;
+  silenceTime: number;
+  /** Living roots bind feet; punches and spells remain available. */
+  rootTime: number;
   cooldowns: [number, number, number];
   actionConnected: boolean;
   /** Locked world-space destination for the current spell. */
@@ -76,12 +86,17 @@ export interface FightSnapshot {
 export type FightEvent =
   | {
       type: 'cast';
+      castId: number;
       fighterId: string;
       spellIndex: 0 | 1 | 2;
       originX: number;
       targetX: number;
     }
   | { type: 'hit'; fighterId: string; targetId: string; damage: number }
+  | { type: 'block'; fighterId: string; targetId: string; absorbed: number; broken: boolean }
+  | { type: 'heal'; fighterId: string; amount: number }
+  | { type: 'shield'; fighterId: string; spellId: string }
+  | { type: 'poison'; fighterId: string; targetId: string; damage: number }
   | { type: 'jump'; fighterId: string; jumpNumber: 1 | 2 }
   | { type: 'flight'; fighterId: string }
   | { type: 'ko'; fighterId: string };
