@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUpRight } from 'lucide-react';
 import type { ElementType } from '../../types';
 import { PERSONAL_INFO } from '../../data/portfolioData';
 import { ArcaneSigil } from './ArcaneSigil';
+import { ElementLogo } from './ElementLogo';
 import { STICK_MAN_ARCHETYPES } from '../../data/stickManArchetypes';
 
 export function HeroSection({ activeRealm, onSelectRealm }: { activeRealm: ElementType; onSelectRealm: (realm: ElementType) => void }) {
@@ -17,7 +18,7 @@ export function HeroSection({ activeRealm, onSelectRealm }: { activeRealm: Eleme
         <span className="folio-location">Bangkok, Thailand <span> / </span> Open to the world</span>
       </div>
       <div className="folio-masthead">
-        <h1 id="hero-title" tabIndex={-1}>{PERSONAL_INFO.displayName}<span aria-hidden="true">✳</span></h1>
+        <h1 id="hero-title" tabIndex={-1}>{PERSONAL_INFO.displayName}<span aria-hidden="true"><ElementLogo realm={activeRealm} /></span></h1>
         <p className="folio-masthead-note">Software engineer<br />Creative developer<br /><span>Personal portfolio / 01</span></p>
       </div>
       <div className="folio-hero-grid">
@@ -47,7 +48,7 @@ export function HeroSection({ activeRealm, onSelectRealm }: { activeRealm: Eleme
         </div>
       </div>
       <div className="folio-hero-bottom">
-        <p><span className="folio-star">✳</span> A solid foundation. An untamed imagination.</p>
+        <p><ElementLogo realm={activeRealm} className="folio-star" size={20} /> A solid foundation. An untamed imagination.</p>
         <p className="folio-world-note">The little inhabitants? They’re part of the personality.</p>
         <a href="#projects" className="folio-scroll-link" aria-label="Scroll to projects"><ArrowDown size={18} /></a>
       </div>

@@ -25,7 +25,7 @@ const StickManWorld3D = dynamic(
 );
 
 export default function Home() {
-  const [activeRealm, setActiveRealm] = useState<ElementType>('light');
+  const [activeRealm, setActiveRealm] = useState<ElementType>('fire');
   const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(true);
   const [effectsReady, setEffectsReady] = useState(false);
 

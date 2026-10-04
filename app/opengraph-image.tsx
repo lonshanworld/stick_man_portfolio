@@ -29,8 +29,9 @@ export default function Image() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', fontSize: 148, fontWeight: 700, letterSpacing: -9 }}>
           Lon Shan
-          <svg width="100" height="100" viewBox="0 0 100 100" style={{ marginLeft: 24 }}>
-            <g stroke="#fff2c8" strokeWidth="7"><path d="M50 4v92M4 50h92M17 17l66 66M17 83l66-66" /></g>
+          <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="#fff2c8" strokeWidth="1.6" strokeLinecap="round" style={{ marginLeft: 24 }}>
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" />
           </svg>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', paddingTop: 30, borderTop: '1px solid #55534c' }}>

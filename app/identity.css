@@ -7,6 +7,7 @@
 .folio-brand { gap: 14px; font-weight: 600; font-size: 15px; }
 .folio-brand-mark { width: 43px; height: 43px; display: flex; gap: 1px; border: 0; transform: none; font-size: 25px; font-weight: 800; letter-spacing: -.1em; color: var(--folio-text); }
 .folio-brand-mark span { font-size: 17px; align-self: flex-start; margin-top: 2px; color: var(--folio-accent); letter-spacing: 0; }
+.folio-brand-mark svg { width: 1em; height: 1em; transform: none; }
 .folio-brand-caption { font: 10px/1.5 var(--font-geist-mono), monospace; letter-spacing: 0; }
 .folio-nav-links { gap: 23px; }
 .folio-nav-links a { font-size: 12px; }
@@ -20,6 +21,7 @@
 .folio-masthead { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding-block: 22px 32px; border-bottom: 1px solid var(--folio-line); }
 .folio-hero .folio-masthead h1 { font: 600 clamp(84px, 12.7vw, 188px)/.95 var(--font-geist-sans), sans-serif; letter-spacing: -.085em; white-space: nowrap; }
 .folio-masthead h1 > span { display: inline-block; vertical-align: top; margin: .1em 0 0 .13em; font-size: .47em; line-height: 1; color: var(--folio-accent); }
+.folio-masthead h1 > span svg { width: 1em; height: 1em; }
 .folio-masthead-note { padding-bottom: 5px; font: 11px/1.8 var(--font-geist-mono), monospace; text-transform: uppercase; color: var(--folio-text); }
 .folio-masthead-note > span { display: block; margin-top: 15px; font-size: 9px; color: var(--folio-muted); }
 .folio-hero-grid { grid-template-columns: 1.2fr 1fr; gap: 100px; padding-block: 36px; align-items: center; }

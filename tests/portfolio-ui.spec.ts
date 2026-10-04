@@ -17,9 +17,9 @@ test('seals hydrate consistently across floating-point differences', async ({ pa
   await expect(page.locator('[id^="stickman-anchor-"]')).toHaveCount(28, { timeout: 20_000 });
   for (const selector of ['.folio-portal', '.folio-contact-seal']) {
     const markers = page.locator(`${selector} svg > g[fill="currentColor"] circle`);
-    await expect(markers).toHaveCount(12);
-    await expect(markers.last()).toHaveAttribute('cx', '132.50');
-    await expect(markers.last()).toHaveAttribute('cy', '83.09');
+    await expect(markers).toHaveCount(3);
+    await expect(markers.last()).toHaveAttribute('cx', '83.09');
+    await expect(markers.last()).toHaveAttribute('cy', '267.50');
   }
   expect(errors).toEqual([]);
 });
@@ -31,7 +31,7 @@ test('the full portfolio stays usable with 28 characters and no background parti
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    'Lon Shan✳',
+    'Lon Shan',
   );
   await expect(page.locator('[id^="stickman-anchor-"]')).toHaveCount(28, {
     timeout: 20_000,
@@ -157,7 +157,11 @@ test('every roaming stickman changes the full theme and all fourteen seals are d
   for (const character of INITIAL_POPULATION_CONFIG) {
     const anchor = page.locator(`#stickman-anchor-${character.id}`);
     await anchor.dispatchEvent('click');
+    // Check the five-second selection menu before the theme and SVG reads.
+    await expect(anchor.locator('.character-spell-menu button')).toHaveCount(3);
     await expect(page.locator('main')).toHaveAttribute('data-realm', character.element);
+    await expect(page.locator('#hero-title svg')).toHaveAttribute('data-element', character.element);
+    await expect(page.locator('.folio-brand-mark svg')).toHaveAttribute('data-element', character.element);
     await expect(page.locator('.folio-portal svg')).toHaveAttribute('data-seal', character.element);
     await expect(page.locator('.folio-contact-seal svg')).toHaveAttribute('data-seal', character.element);
     await expect(page.locator('.folio-conjuring-caption')).toContainText(STICK_MAN_ARCHETYPES[character.element].title);
@@ -173,7 +177,6 @@ test('every roaming stickman changes the full theme and all fourteen seals are d
     expect(styles.nav).not.toBe('rgba(0, 0, 0, 0)');
     expect(styles.card).toContain('gradient');
     signatures.set(character.element, await page.locator('.folio-portal .sigil-inner').innerHTML());
-    await expect(anchor.locator('.character-spell-menu button')).toHaveCount(3);
     await expect(page.locator('main')).toHaveAttribute('data-realm', character.element);
     await page.keyboard.press('Escape');
   }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Menu, X, Volume2, VolumeX, ArrowUpRight } from 'lucide-react';
 import type { ElementType } from '../../types';
+import { ElementLogo } from './ElementLogo';
 
 const LINKS = [
   ['About', 'hero'],
@@ -14,6 +15,7 @@ const LINKS = [
 ];
 
 export function NavBar({
+  activeRealm,
   isSoundEnabled = true,
   onToggleSound,
 }: {
@@ -53,7 +55,7 @@ export function NavBar({
       <nav className="folio-nav" aria-label="Main navigation">
         <a className="folio-brand" href="#hero" onClick={() => setOpen(false)}>
           <span className="folio-brand-mark" aria-hidden="true">
-            LS<span>✳</span>
+            LS<span><ElementLogo realm={activeRealm} /></span>
           </span>
           <span>
             Lon Shan
