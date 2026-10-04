@@ -1,3 +1,4 @@
+import { installSilenceMarker } from './silenceMarker';
 import { createHealingEmblem, createHealingHeartGeometry, createHealingCrossGeometry } from './healingVitality';
 import { createRobotHardware } from './robotHardware';
 import { createChronometer, createTemporalHourglass } from './timeChronology';
@@ -24,6 +25,7 @@ import {
   buildCharacterLegs,
 } from './characterArchetypeBuilders';
 import { createHandMagicSeal } from './magicSeal3D';
+import { installLightCharacterContrast } from './lightCharacterContrast';
 
 // ── Shared Materials and Geometries Cache ──────────────────────────────
 let cachedShadowTexture: THREE.CanvasTexture | null = null;
@@ -1169,6 +1171,7 @@ export function createStickMan3DCharacter(
     opacity: 1.0,
   });
   const shadowMesh = new THREE.Mesh(dotGeo, dotMat);
+  shadowMesh.name = 'ground-shadow';
   shadowMesh.rotation.x = -Math.PI / 2;
   shadowMesh.position.y = 0.012;
   group.add(shadowMesh);
@@ -1275,7 +1278,9 @@ export function createStickMan3DCharacter(
     waypointIdx: 0,
     isRallyMoving: false,
   };
+  installSilenceMarker(character);
   installArchangelMichael(character);
   installFallenLucifer(character);
+  if (element === 'light') installLightCharacterContrast(group);
   return character;
 }

@@ -155,9 +155,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-theme="dark"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scroll-smooth`}
     >
-      <body className="min-h-full flex flex-col bg-[#101016] text-white">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var t;try{t=localStorage.getItem('portfolio-theme')}catch(e){}if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;})()` }} />
+      </head>
+      <body className="min-h-full flex flex-col">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

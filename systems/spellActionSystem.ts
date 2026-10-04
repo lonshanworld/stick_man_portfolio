@@ -36,6 +36,7 @@ export interface SpellPose {
   kind?: SpellPoseKind;
   progress?: number;
   shielded?: boolean;
+  silenceTime?: number;
   archangelTime?: number;
   demonTime?: number;
   speedMultiplier?: number;
@@ -279,6 +280,7 @@ export class SpellActionSystem {
         kind: POSE_FOR_STATUS[strongest.kind],
         progress,
         shielded: statuses.has('shielded'),
+        silenceTime: statuses.get('silenced')?.remaining ?? 0,
         archangelTime: statuses.get('archangel')?.remaining ?? 0,
         demonTime: statuses.get('demon')?.remaining ?? 0,
         speedMultiplier: statuses.has('slowed') ? 0.38 : 1,
@@ -336,6 +338,7 @@ export class SpellActionSystem {
       hidden: current.hidden || incoming.hidden, paused: current.paused || incoming.paused,
       kind: incoming.kind || current.kind, progress: incoming.progress ?? current.progress,
       shielded: current.shielded || incoming.shielded,
+      silenceTime: incoming.silenceTime ?? current.silenceTime,
       archangelTime: incoming.archangelTime ?? current.archangelTime,
       demonTime: incoming.demonTime ?? current.demonTime,
       speedMultiplier: Math.min(current.speedMultiplier ?? 1, incoming.speedMultiplier ?? 1),

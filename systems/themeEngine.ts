@@ -230,23 +230,29 @@ export const THEMES: Record<ElementType, ThemeConfig> = {
   },
 };
 
-export function applyThemeVariables(element: ElementType) {
+export type ThemeMode = 'light' | 'dark';
+export const THEME_STORAGE_KEY = 'portfolio-theme';
+
+export function applyThemeVariables(element: ElementType, mode: ThemeMode = 'dark', elementalAccent = true) {
   if (typeof document === 'undefined') return;
 
   const realm = THEMES[element];
   const root = document.documentElement;
   const palette = ELEMENT_PALETTES[element];
-  // Share character identity colors while keeping text legible on dark surfaces.
+  const light = mode === 'light';
+  root.dataset.theme = mode;
+  root.style.colorScheme = mode;
+  // Neutral surfaces belong to the mode; a selected companion owns the accents.
   const mix = (color: string, base: string, weight: number) =>
     `color-mix(in srgb, ${color} ${weight}%, ${base})`;
   const folioVariables = {
-    bg: mix(palette.primary, '#101016', 6),
-    surface: mix(palette.primary, '#181820', 9),
-    text: mix(palette.secondary, '#efece5', 12),
-    muted: mix(palette.secondary, '#aaa6ad', 22),
-    line: mix(palette.primary, '#34313b', 16),
-    accent: mix(palette.primary, '#ffffff', 65),
-    secondary: palette.secondary,
+    bg: light ? '#f7f7f5' : '#121212',
+    surface: light ? '#ffffff' : '#1c1c1c',
+    text: light ? '#202020' : '#eeeeec',
+    muted: light ? '#555555' : '#aaaaaa',
+    line: light ? '#cececc' : '#363636',
+    accent: elementalAccent ? mix(palette.primary, light ? '#171717' : '#ffffff', light ? 38 : 65) : light ? '#292929' : '#dededb',
+    secondary: elementalAccent ? (light ? mix(palette.secondary, '#171717', 38) : palette.secondary) : light ? '#454545' : '#c5c5c5',
   };
   Object.entries(folioVariables).forEach(([key, value]) => {
     root.style.setProperty(`--folio-${key}`, value);
@@ -254,14 +260,14 @@ export function applyThemeVariables(element: ElementType) {
   const config = {
     ...realm,
     bgGradient: `radial-gradient(ellipse at 50% 20%, ${folioVariables.surface}, ${folioVariables.bg} 70%)`,
-    primaryColor: palette.primary,
-    secondaryColor: palette.secondary,
+    primaryColor: folioVariables.accent,
+    secondaryColor: folioVariables.secondary,
     accentColor: folioVariables.accent,
     textColor: folioVariables.text,
     subtextColor: folioVariables.muted,
     cardBg: folioVariables.surface,
     cardBorder: folioVariables.line,
-    glowColor: mix(palette.primary, 'transparent', 40),
+    glowColor: mix(folioVariables.accent, 'transparent', 40),
   };
 
   root.style.setProperty('--theme-bg', config.bgGradient);

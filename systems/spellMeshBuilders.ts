@@ -24,7 +24,7 @@ export { buildChronoRewind, buildStasisField } from './timeSpellBuilders';
 
 export { buildSakuraSanctuary, buildPetalBreeze, buildVitalityRain } from './healingSpellBuilders';
 
-export { buildVoidHorizon as buildSingularityEvent } from './voidSpellBuilders';
+export { buildVoidObelisk as buildNullObelisk } from './voidSpellBuilders';
 
 
 export { buildPyroclasticSurge, buildWhirlpoolVortex, buildPlasmaRailgun, buildBlizzardVortex, buildAeroShockwave, buildBoulderCatapult, buildIronwoodSlam, buildLuciferAscension, buildSunburstLance, buildArchangelAscension, buildMeteorShower, buildCosmicRay, buildGearBarrage, buildHyperBeam, buildOverclockGrid, buildMissileSalvo, buildDimensionalSlash, buildVoidCollapse } from './spellDistinctAbilities';

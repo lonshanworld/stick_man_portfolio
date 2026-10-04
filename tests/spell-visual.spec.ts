@@ -189,7 +189,7 @@ test('support, control and mobility spells change observable world state', async
   expect((await render('ice-absolute-zero', 0.5))?.target?.pose?.kind).toBe('frozen');
   expect((await render('trees-root-entanglement', 0.5))?.target?.pose?.kind).toBe('rooted');
   expect((await render('time-stasis-field', 0.5))?.target?.pose?.kind).toBe('frozen');
-  expect((await render('void-singularity-event', 0.5))?.target?.silenced).toBe(true);
+  expect((await render('void-null-obelisk', 0.5))?.target?.silenced).toBe(true);
 
   const pull = await render('space-meteor-shower', 0.6);
   expect(Math.hypot((pull?.target?.x || 0) - (pull?.target?.startX || 0), (pull?.target?.y || 0) - (pull?.target?.startY || 0))).toBeGreaterThan(0.05);

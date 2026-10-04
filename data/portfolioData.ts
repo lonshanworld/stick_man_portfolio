@@ -71,14 +71,14 @@ export const PROJECTS: ProjectItem[] = [
     tagline: 'Multi-portal offline-first POS & retail management ecosystem',
     elementAffinity: 'fire',
     description:
-      'Production enterprise retail platform connecting merchants, cashier terminals, and administrators. Built with offline-first transaction queues, sub-millisecond barcode lookups, and Bluetooth BLE receipt printer integration.',
+      'Built a retail management system from scratch for merchants, staff, and administrators, with POS workflows, dashboards, and backend services. It supports offline-first sales, Bluetooth thermal printing, and AI-assisted business queries.',
     tech: ['Flutter', 'Go Fiber', 'Next.js', 'PostgreSQL', 'BLE Printing', 'Docker'],
     categories: ['Web', 'Mobile', 'Full-Stack'],
     link: 'https://smartretail.lonshan.com',
     highlights: [
-      'Engineered offline transaction queue with automatic conflict resolution upon reconnection.',
-      'High-throughput backend service written in Go Fiber delivering 0.8ms average query response.',
-      'Custom hardware driver for thermal printers via Bluetooth Low Energy and WebUSB.',
+      'Offline-first local storage and a sync queue support sales in unreliable network conditions.',
+      'Bluetooth Classic and BLE thermal printing with configurable formatting and layouts.',
+      'AI-assisted business features use structured data queries and context-based responses.',
     ],
   },
   {
@@ -87,13 +87,13 @@ export const PROJECTS: ProjectItem[] = [
     tagline: 'Telemedicine & pharmacy ecosystem connecting doctors and patients',
     elementAffinity: 'healing',
     description:
-      'Comprehensive digital healthcare platform enabling seamless telemedicine video appointments, electronic prescription dispatch, and encrypted patient histories.',
+      'Contributed to frontend and full-stack development across a women’s health platform for customers, clinics, pharmacies, and administrators. Built interfaces, integrated APIs, and improved workflows and data handling across web and mobile.',
     tech: ['React Native', 'Laravel', 'Express.js', 'MySQL', 'WebSockets'],
     categories: ['Mobile', 'Backend', 'HealthTech'],
     link: 'https://pistil.io',
     highlights: [
-      'HIPAA-ready encrypted patient intake workflow and real-time doctor-patient messaging.',
-      'Real-time prescription synchronization between clinical dashboard and pharmacy logistics.',
+      'Built user interfaces for customer, clinic, pharmacy, and admin systems.',
+      'Integrated APIs and improved system workflows and data handling.',
     ],
   },
   {
@@ -102,26 +102,29 @@ export const PROJECTS: ProjectItem[] = [
     tagline: 'Cross-platform routing utility with real-time speed monitoring',
     elementAffinity: 'lightning',
     description:
-      'Desktop & mobile management client for high-performance network tunnels. Features latency telemetry graphs, dynamic rule configuration, and auto-failover nodes.',
+      'Built a lightweight Go service for VPN server management, with configuration generation and client management designed for low-resource VPS deployments.',
     tech: ['Flutter', 'Rust', 'WebSockets', 'Chart.js', 'Linux / macOS'],
     categories: ['Desktop', 'Mobile', 'Systems'],
     highlights: [
-      'Rust FFI bridge for microsecond-level packet metrics and memory efficiency.',
-      'Dynamic routing rule editor with live visual latency ping heatmaps.',
+      'Generates VPN configurations and supports client management.',
+      'Designed for deployment on low-resource VPS instances.',
     ],
   },
   {
     id: 'stickman-world',
     title: 'Elemental Stick Man Realm 3D',
-    tagline: 'Interactive 3D WebGL ecosystem with tiny elemental stick figures',
+    tagline: 'Browser-based action game with elemental fighters and a living 3D world',
     elementAffinity: 'space',
     description:
-      'Cinematic 3D web experience with procedurally rigged stick men who roam, jump, spar, cast elemental spells, and interact with the DOM elements of the website.',
+      'Developed a browser-based 3D game world inside the portfolio. Elemental stick figures roam and spar; visitors can choose fighters, battle AI opponents, and cast character-specific spells. Built custom character animation, real-time combat systems, and procedural spell effects with Three.js.',
     tech: ['Three.js', 'Next.js', 'TypeScript', 'Web Audio API', 'Tailwind CSS'],
     categories: ['Creative Dev', '3D WebGL', 'Frontend'],
     highlights: [
-      'Procedural bone joint kinematics and physics-based particle auras around head & body.',
-      'Custom Web Audio synthesizer for zero-latency elemental magic soundscapes.',
+      'Open-world simulation with 28 roaming characters across 14 elements, with movement, dialogue, duels, and other ambient behaviors.',
+      'Choose a fighter and battle AI opponents in a real-time arena using movement, jumps, punches, kicks, and elemental spells.',
+      'Combat includes health and energy, spell cooldowns, shields, status effects, and powerful character transformations.',
+      'Each element has its own spell set, custom 3D effects, character animations, and synthesized audio.',
+      'AI-driven character dialogue and element-based themes connect the game world to the portfolio sections.',
     ],
   },
   {
@@ -130,12 +133,13 @@ export const PROJECTS: ProjectItem[] = [
     tagline: 'E-commerce mobile app & seller dashboard with interactive lookbooks',
     elementAffinity: 'water',
     description:
-      'Social commerce marketplace promoting sustainable fashion brands. Features interactive lookbook collage builder, personalized style quiz, and seller payout gateway.',
+      'Migrated Smthgood’s Flutter mobile app to a scalable Next.js web platform, building seller dashboards and admin tools while improving API integration, data flow, and deployment.',
     tech: ['Flutter', 'Next.js', 'Node.js', 'Stripe', 'AWS S3'],
     categories: ['Mobile', 'E-Commerce'],
     highlights: [
-      'Interactive drag-and-drop lookbook editor with sticker layering and photo filters.',
-      'Over 25,000 active monthly shoppers with 99.9% checkout uptime.',
+      'Built seller dashboards and admin systems with improved workflows and usability.',
+      'Integrated frontend features with backend APIs and improved data flow.',
+      'Managed AWS infrastructure and deployment pipelines with CI/CD.',
     ],
   },
   {
@@ -144,12 +148,13 @@ export const PROJECTS: ProjectItem[] = [
     tagline: 'Hyperlocal food ordering and real-time courier tracking',
     elementAffinity: 'wind',
     description:
-      'Two companion mobile apps for delivery riders and restaurant managers featuring live GPS routing, instant audio order alerts, and automated shift payout settlements.',
+      'Built the QuickFood Rider and Merchant Flutter apps from scratch and shipped them to the App Store and Google Play. The apps support authentication, order management, support messaging, payments, delivery navigation, and real-time location updates.',
     tech: ['Flutter', 'Firebase', 'Google Maps SDK', 'WebSockets'],
     categories: ['Mobile', 'Logistics'],
     highlights: [
-      'Optimized route dispatch algorithm reducing delivery times by 18%.',
-      'Battery-efficient background GPS beacon keeping riders tracked accurately.',
+      'Integrated backend APIs for payments, chat, and platform services.',
+      'Implemented delivery location tracking and real-time communication with WebSockets.',
+      'Optimized app performance and added deep linking for navigation.',
     ],
   },
 ];

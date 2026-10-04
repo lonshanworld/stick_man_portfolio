@@ -40,7 +40,7 @@ export const SPELL_SOUNDS: Record<string, SpellTone[]> = {
   'healing-sakura-sanctuary': [[587, 587, 0, .65, 'sine'], [740, 740, .3, .7, 'sine'], [880, 880, .6, .75, 'sine']],
   'healing-petal-breeze': [[880, 1100, 0, .2, 'sine'], [1100, 880, .24, .2, 'sine'], [1320, 1320, .52, .45, 'sine']],
   'healing-vitality-rain': [[1500, 1100, 0, .12, 'sine'], [1320, 990, .22, .15, 'sine'], [1175, 880, .5, .18, 'sine'], [1046, 784, .8, .2, 'sine']],
-  'void-singularity-event': [[130, 30, 0, 1.3, 'sine'], [65, 35, .6, 1.1, 'sawtooth']],
+  'void-null-obelisk': [[90, 60, 0, .24, 'triangle'], [240, 120, .32, .12, 'square'], [180, 90, .5, .12, 'square'], [60, 40, .64, .7, 'sine']],
   'void-dimensional-slash': [[1300, 100, .15, .12, 'sawtooth'], [900, 60, .5, .15, 'sawtooth']],
   'void-catastrophic-collapse': [[70, 300, 0, 1.1, 'sine'], [320, 40, 1.3, .3, 'triangle']],
 };

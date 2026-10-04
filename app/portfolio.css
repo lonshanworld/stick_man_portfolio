@@ -1,6 +1,10 @@
 /* A living portfolio: editorial typography, elemental color, and crafted experiments.
    Small text is increased by 2px across the portfolio and companion interfaces. */
-:root { --folio-bg: #101016; --folio-surface: #181820; --folio-text: #efece5; --folio-muted: #aaa6ad; --folio-line: #34313b; --folio-accent: #e6c48a; }
+:root { --folio-bg: #121212; --folio-surface: #1c1c1c; --folio-text: #eeeeec; --folio-muted: #aaaaaa; --folio-line: #363636; --folio-accent: #dededb; }
+:root[data-theme='dark'] { color-scheme: dark; }
+:root[data-theme='light'] { color-scheme: light; --folio-bg: #f7f7f5; --folio-surface: #fff; --folio-text: #202020; --folio-muted: #555555; --folio-line: #cececc; --folio-accent: #292929; }
+body { background: var(--folio-bg); color: var(--folio-text); }
+:root[data-theme='light'] body.spell-preview-mode { background: var(--folio-bg); }
 .folio { color: var(--folio-text); font-family: var(--font-geist-sans), sans-serif; background: var(--folio-bg); }
 .folio ::selection { background: var(--folio-accent); color: var(--folio-bg); }
 .folio :is(a,button,input,summary):focus-visible { outline: 2px solid var(--folio-accent); outline-offset: 5px; }

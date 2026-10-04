@@ -42,7 +42,7 @@ const GLYPHS: Record<string, string> = {
   'healing-sakura-sanctuary': 'M16 28C-3 16 3 2 16 10c13-8 19 6 0 18ZM13 12h6v4h4v6h-4v4h-6v-4H9v-6h4Z',
   'healing-petal-breeze': 'M16 9v19M15 14C0 0 0 19 12 20 1 23 8 32 16 25c8 7 15-2 4-5 12-1 12-20-3-6ZM12 3l4 6 4-6M13 19h6M16 16v6',
   'healing-vitality-rain': 'M9 5a5 5 0 0 1 10 0v12a5 5 0 0 1-10 0ZM9 11h10M23 19h7M26.5 15.5v7M4 23h7M7.5 19.5v7',
-  'void-singularity-event': 'M9 16a7 7 0 1 0 14 0 7 7 0 1 0-14 0ZM3 21C-3 14 27 6 29 11s-26 14-26 10ZM4 7l3 3M25 23l3 3M16 2v3M16 27v3',
+  'void-null-obelisk': 'M10 28V8l6-6 6 6v20H10ZM16 2v26M12 11l3-2 4 3-2 2M12 18l3-2 4 3-2 2M4 25l2-9 2 9M25 23l2-11 2 11M3 30l7-2M22 28l7 2',
   'void-dimensional-slash': 'M3 4l10 7-1 3 4 1 12 13-13-9 1-3-4-1L3 4ZM3 28l10-7-1-3 4-1L28 4 15 13l1 3-4 1L3 28ZM2 14l3 2-3 3M30 14l-3 2 3 3',
   'void-catastrophic-collapse': 'M16 2l-6 7 2 4-5 6 4 3-2 4 7 4 7-4-2-4 4-3-5-6 2-4-6-7ZM12 13l8 1M10 19l12 1M12 25l8 1M3 9l-1 5M29 21l1 5',
 };
@@ -52,7 +52,7 @@ const FIRST: Record<ElementType, string> = {
   ice: 'ice-absolute-zero', wind: 'wind-tornado-gale', soil: 'soil-bedrock-fissure',
   trees: 'trees-root-entanglement', dark: 'dark-eclipse-nova', light: 'light-solar-dawn',
   space: 'space-planetary-rings', time: 'time-chrono-rewind', robot: 'robot-overclock-grid',
-  healing: 'healing-sakura-sanctuary', void: 'void-singularity-event',
+  healing: 'healing-sakura-sanctuary', void: 'void-null-obelisk',
 };
 
 export function SpellIcon({ spell, size = 24 }: { spell: ElementalSpell; size?: number }) {

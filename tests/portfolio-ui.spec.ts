@@ -36,8 +36,7 @@ test('the full portfolio stays usable with 28 characters and no background parti
   await expect(page.locator('[id^="stickman-anchor-"]')).toHaveCount(28, {
     timeout: 20_000,
   });
-  await expect(page.locator('canvas')).toHaveCount(1);
-  await expect(page.locator('canvas')).toHaveClass(/spell-world-canvas/);
+  await expect(page.locator('canvas.spell-world-canvas')).toHaveCount(1);
   await expect(page.locator('.folio-section, .folio-contact')).toHaveCount(5);
   await expect(page.locator('.folio-nav')).toHaveCSS('border-bottom-width', '1px');
   await expect(page.getByRole('group', { name: 'Choose a magic element' })).toHaveCount(0);

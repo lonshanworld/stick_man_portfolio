@@ -659,17 +659,17 @@ export const ELEMENTAL_SPELLS: Record<ElementType, ElementalSpell[]> = {
 
   void: [
     {
-      id: 'void-singularity-event',
+      id: 'void-null-obelisk',
       element: 'void',
-      name: 'Event Horizon',
-      icon: '🕳️',
-      description: 'Opens a light-devouring singularity with a violet accretion belt, dragging obsidian fragments into its dark core.',
+      name: 'Null Obelisk',
+      icon: '🪨',
+      description: 'Raises a fractured obsidian obelisk ahead. Broken violet glyphs seal nearby enemies’ magic for 7 seconds.',
       castType: 'control',
       target: 'area',
       action: 'silence',
       effectOrigin: 'ahead',
       radius: 175,
-      statusDuration: 2.2,
+      statusDuration: 7,
       duration: 2.6,
       primaryColor: '#A74883',
       secondaryColor: '#D6B5FF',

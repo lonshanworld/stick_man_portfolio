@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Menu, X, Volume2, VolumeX, ArrowUpRight } from 'lucide-react';
+import { Menu, X, Volume2, VolumeX, ArrowUpRight, Sun, Moon } from 'lucide-react';
+import type { ThemeMode } from '../../systems/themeEngine';
 import type { ElementType } from '../../types';
 import { ElementLogo } from './ElementLogo';
 
@@ -18,10 +19,14 @@ export function NavBar({
   activeRealm,
   isSoundEnabled = true,
   onToggleSound,
+  themeMode,
+  onToggleTheme,
 }: {
   activeRealm: ElementType;
   isSoundEnabled?: boolean;
   onToggleSound?: () => void;
+  themeMode: ThemeMode;
+  onToggleTheme: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState('hero');
@@ -65,6 +70,16 @@ export function NavBar({
           </span>
         </a>
         <div className="folio-nav-actions">
+          <button
+            type="button"
+            className="folio-icon-button"
+            onClick={onToggleTheme}
+            aria-label={`Switch to ${themeMode === 'dark' ? 'light' : 'dark'} theme`}
+            title={`Switch to ${themeMode === 'dark' ? 'light' : 'dark'} theme`}
+            aria-pressed={themeMode === 'light'}
+          >
+            {themeMode === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
           {onToggleSound && (
             <button
               className="folio-icon-button"

@@ -73,7 +73,9 @@ export function ProjectsSection({ activeRealm }: { activeRealm: ElementType }) {
                 <p className="folio-description">{project.description}</p>
                 <p className="folio-tech-line">{project.tech.join(' / ')}</p>
                 <details className="folio-details">
-                  <summary>Project notes</summary>
+                  <summary>
+                    {project.id === 'stickman-world' ? 'Game features' : 'Project notes'}
+                  </summary>
                   <ul>
                     {project.highlights.map((highlight) => (
                       <li key={highlight}>{highlight}</li>

@@ -2,24 +2,23 @@ import * as THREE from 'three';
 import type { ElementalSpell } from '../data/elementalSpells';
 import { SpellDrawing, clamp, ease, noise, TAU, type Point, type BuiltSpellEffect } from './spellDrawing';
 
-type VoidSurface = 'horizon' | 'cut' | 'breach';
+type VoidSurface = 'obelisk' | 'cut' | 'breach';
 
 /** Void has opaque negative space bounded by hot, fractured energy, not a red wireframe. */
 function voidSurface(d: SpellDrawing, kind: VoidSurface, width: number, height: number) {
   const patterns: Record<VoidSurface, string> = {
-    horizon: `
-      float radius = length(p), angle = atan(p.y, p.x);
-      float warp = fbm(vec2(angle * 2.8, radius * 12.0 - uTime * 1.6));
-      float edge = .41 + sin(angle * 7.0 + uTime) * .006;
-      float rim = exp(-abs(radius - edge) * 115.0);
-      float corona = exp(-abs(radius - .49) * 15.0);
-      float spiral = pow(.5 + .5 * sin(angle * 3.0 + radius * 30.0 - uTime * 4.0 + warp * 6.0), 5.0);
-      float accretion = corona * (.2 + spiral * .8) * smoothstep(.4, .45, radius);
-      float core = 1.0 - smoothstep(.395, .413, radius);
-      color = mix(vec3(.24,.035,.38), vec3(.94,.22,.46), warp) * accretion * 1.8;
-      color += mix(vec3(.6,.32,1.0), vec3(1.0,.86,.95), rim) * rim;
-      color = mix(color, vec3(.003,.002,.008), core);
-      alpha = max(core, min(1.0, rim + accretion * 1.2));`,
+    obelisk: `
+      float bevel = .42 - max(0.0, p.y - .52) * .48;
+      float edge = abs(p.x) - bevel;
+      float core = (1.0 - smoothstep(-.012, .012, edge)) * (1.0 - smoothstep(.91, .96, abs(p.y)));
+      float rim = exp(-abs(edge) * 100.0) * (1.0 - smoothstep(.88, .97, abs(p.y)));
+      float fault = abs(p.x - sin(p.y * 19.0) * .045 - .07);
+      float crack = exp(-fault * 170.0) * core;
+      float strata = fbm(vec2(p.x * 23.0, p.y * 13.0));
+      color = vec3(.008,.003,.018) + vec3(.045,.014,.065) * strata;
+      color += vec3(.7,.22,.72) * crack * (.65 + .35 * sin(uTime * 5.0 + p.y * 8.0));
+      color += vec3(.8,.5,1.0) * rim;
+      alpha = max(core, rim * .85);`,
     cut: `
       float taper = pow(max(0.0, 1.0 - p.x * p.x), .65);
       float jagged = (fbm(vec2(p.x * 25.0, floor(uTime * 9.0) * .13)) - .5) * .095;
@@ -88,30 +87,48 @@ function fragments(d: SpellDrawing, count: number, path: (i: number, t: number) 
   return shards;
 }
 
-export function buildVoidHorizon(spell: ElementalSpell): BuiltSpellEffect {
+/** A silence monument assembles vertically; no orbit, accretion, or inward pull. */
+export function buildVoidObelisk(spell: ElementalSpell): BuiltSpellEffect {
   const d = new SpellDrawing(spell);
-  d.root.userData.voidDesign = 'gravitational-horizon';
-  const aperture = voidSurface(d, 'horizon', 94, 94); aperture.position.y = 34;
-  d.halo([0, 34, -2], 42, '#77349c', d.root, .27);
-  // A tilted accretion belt crosses behind the opaque, light-absorbing center.
-  const orbit = new THREE.Group(); orbit.position.y = 34; orbit.rotation.set(.95, .2, -.35); d.root.add(orbit);
-  for (let i = 0; i < 3; i++) {
-    d.ribbon((u, t) => { const a = u * TAU * .9 - t * (1.4 + i * .3) + i * 2;
-      return [Math.cos(a) * (27 + i * 3), Math.sin(a) * (27 + i * 3), 0];
-    }, 2.8, orbit, i % 2 ? '#cb4784' : '#b590f5', .65);
+  d.root.userData.voidDesign = 'silence-obelisk';
+  const monument = new THREE.Group(); monument.name = 'null-obelisk'; d.root.add(monument);
+  // Crossed opaque faces retain the tall silhouette when viewed from either side.
+  for (const angle of [0, Math.PI / 2]) {
+    const face = voidSurface(d, 'obelisk', 52, 102);
+    d.root.remove(face); monument.add(face);
+    face.position.y = 47; face.rotation.y = angle;
   }
-  for (let i = 0; i < 6; i++) {
-    d.ribbon((u, t) => { const r = 20 + u * u * 39, a = i * TAU / 6 + u * 2.3 - t * .8;
-      return [Math.cos(a) * r, 34 + Math.sin(a) * r * .62, -5 - u * 8];
-    }, 1.4, d.root, '#9e477f', .45);
+  const rise = (t: number) => ease(t / .55);
+  const release = (t: number) => ease((t - spell.duration * .78) / (spell.duration * .22));
+  // Interrupted angular glyphs close into a seal when the silence takes effect.
+  for (let i = 0; i < 5; i++) {
+    const y = 19 + i * 13;
+    const glyph = d.line([[-8, y + 3, 14], [-4, y + 6, 14], [5, y, 14], [1, y - 4, 14]], .7, d.secondary, monument);
+    glyph.name = 'broken-silence-glyph';
+    d.motions.push(t => {
+      glyph.visible = t > .35 + i * .055;
+      glyph.position.x = Math.sin(t * 3 + i) * release(t) * 12;
+    });
   }
-  fragments(d, 24, (i, t) => {
-    const p = (noise(i) + t * .42) % 1, a = i * 2.399 - t * 1.3, r = 17 + (1 - p) ** 2 * 39;
-    return [Math.cos(a) * r, 34 + Math.sin(a) * r * .8, -4 - noise(i + 9) * 12];
-  }, 1.8);
+  // Separated stone splinters rise alongside the monolith, then scatter outward.
+  const shards = fragments(d, 22, (i, t) => {
+    const side = i % 2 ? -1 : 1, dissolve = release(t);
+    return [side * (18 + noise(i) * 14 + dissolve * 22),
+      (8 + noise(i + 4) * 73) * rise(t) + Math.sin(t * 2 + i) * 2 + dissolve * 12,
+      (noise(i + 9) - .5) * 24];
+  }, 2.5);
+  shards.name = 'obelisk-splinters';
+  // Four straight ground cracks communicate the area seal without a gravity ring.
+  for (let i = 0; i < 4; i++) {
+    const angle = Math.PI / 4 + i * Math.PI / 2;
+    d.stroke((u, t) => {
+      const reach = u * 46 * rise(t);
+      return [Math.cos(angle) * reach, 1 + Math.sin(u * 17 + i) * .6, Math.sin(angle) * reach];
+    }, .45, d.primary);
+  }
   d.motions.push(t => {
-    const grow = ease(t / .4), collapse = 1 - ease((t - spell.duration * .76) / (spell.duration * .24));
-    aperture.scale.setScalar(grow * collapse); orbit.scale.setScalar(grow * collapse);
+    monument.scale.set(1 + release(t) * .2, rise(t) * (1 - release(t)), 1);
+    monument.position.y = -7 * (1 - rise(t));
   });
   return d.finish();
 }

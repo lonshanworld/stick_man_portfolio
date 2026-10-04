@@ -20,8 +20,23 @@
 .folio-location { font-size: 10px; }
 .folio-masthead { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding-block: 22px 32px; border-bottom: 1px solid var(--folio-line); }
 .folio-hero .folio-masthead h1 { font: 600 clamp(84px, 12.7vw, 188px)/.95 var(--font-geist-sans), sans-serif; letter-spacing: -.085em; white-space: nowrap; }
-.folio-masthead h1 > span { display: inline-block; vertical-align: top; margin: .1em 0 0 .13em; font-size: .47em; line-height: 1; color: var(--folio-accent); }
-.folio-masthead h1 > span svg { width: 1em; height: 1em; }
+.folio-masthead-name {
+  position: relative;
+  display: inline-block;
+  color: var(--folio-text);
+}
+.folio-masthead-name[data-ready='true'] { color: transparent; }
+.folio-masthead-name canvas {
+  position: absolute;
+  top: -25%;
+  left: 0;
+  width: 100%;
+  height: 150%;
+  pointer-events: none;
+  filter: drop-shadow(0 .018em .012em rgb(0 0 0 / 18%)) drop-shadow(.015em .055em .045em rgb(0 0 0 / 17%));
+}
+.folio-masthead h1 > .folio-masthead-symbol { display: inline-block; vertical-align: top; margin: .1em 0 0 .13em; font-size: .47em; line-height: 1; color: var(--folio-accent); }
+.folio-masthead-symbol svg { width: 1em; height: 1em; }
 .folio-masthead-note { padding-bottom: 5px; font: 11px/1.8 var(--font-geist-mono), monospace; text-transform: uppercase; color: var(--folio-text); }
 .folio-masthead-note > span { display: block; margin-top: 15px; font-size: 9px; color: var(--folio-muted); }
 .folio-hero-grid { grid-template-columns: 1.2fr 1fr; gap: 100px; padding-block: 36px; align-items: center; }

@@ -43,7 +43,7 @@ import {
   buildSakuraSanctuary,
   buildPetalBreeze,
   buildVitalityRain,
-  buildSingularityEvent,
+  buildNullObelisk,
   buildDimensionalSlash,
   buildVoidCollapse,
 } from './spellMeshBuilders';
@@ -110,7 +110,7 @@ export const SPELL_BUILDERS: Record<string, SpellBuilder> = {
   'healing-sakura-sanctuary': spell => buildSakuraSanctuary(spell),
   'healing-petal-breeze': spell => buildPetalBreeze(spell),
   'healing-vitality-rain': spell => buildVitalityRain(spell),
-  'void-singularity-event': spell => buildSingularityEvent(spell),
+  'void-null-obelisk': spell => buildNullObelisk(spell),
   'void-dimensional-slash': spell => buildDimensionalSlash(spell),
   'void-catastrophic-collapse': spell => buildVoidCollapse(spell),
 };

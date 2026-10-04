@@ -1,3 +1,4 @@
+import { updateSilenceMarker } from '../silenceMarker';
 import { healingCastPose } from '../healingCastPose';
 import { updateHealingPower } from '../healingVitality';
 import { robotCastPose } from '../robotCastPose';
@@ -310,6 +311,7 @@ export function applyCombatAnimation(
   char.leftLeg.knee.rotation.x = damp(char.leftLeg.knee.rotation.x, pose.leftKnee, delta, response);
   char.rightLeg.knee.rotation.x = damp(char.rightLeg.knee.rotation.x, pose.rightKnee, delta, response);
 
+  updateSilenceMarker(char, fighter.silenceTime, time);
   updateArchangelMichael(char, fighter.archangelTime, time);
   updateFallenLucifer(char, fighter.demonTime, time, char.group.userData.poisonRadius);
   const coreScale = damp(char.powerCoreMesh.scale.x, pose.coreScale, delta, 12);

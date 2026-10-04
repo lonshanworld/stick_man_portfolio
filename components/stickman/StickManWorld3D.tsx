@@ -1,5 +1,6 @@
 'use client';
 
+import { updateSilenceMarker } from '../../systems/silenceMarker';
 import { healingCastPose } from '../../systems/healingCastPose';
 
 import { updateHealingPower } from '../../systems/healingVitality';
@@ -20,6 +21,7 @@ import { darkCastPose } from '../../systems/darkCastPose';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import * as THREE from 'three';
+import { installThemeMaterials } from '../../systems/themeMaterials';
 import { ElementType, StickMan3DCharacter } from '../../types';
 import { STICK_MAN_ARCHETYPES } from '../../data/stickManArchetypes';
 import { ELEMENTAL_SPELLS, type ElementalSpell } from '../../data/elementalSpells';
@@ -531,6 +533,7 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
       powerPreference: 'high-performance',
     });
     renderer.setClearColor(0x000000, 0);
+    installThemeMaterials(renderer);
     renderer.setSize(winWidth, winHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
@@ -629,6 +632,7 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
         actor.group.position.set(-35 + (fixture.docX - 50) * winWidth / 100, -35 - (fixture.docY - 50) * winHeight * 2 / 100 + (pose?.lift || 0), 0);
         actor.group.rotation.set(0.44, fixture.headingAngle, 0);
         actor.bodyGroup.scale.setScalar(pose?.scale ?? 1);
+        updateSilenceMarker(actor, pose?.silenceTime ?? 0, elapsed);
         updateArchangelMichael(actor, pose?.archangelTime ?? 0, elapsed);
         updateHealingPower(actor, elapsed);
         updateSpacePower(actor, elapsed, Boolean(pose?.shielded));
@@ -658,6 +662,7 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
             );
             targetActor.group.rotation.set(0.44, fixture.headingAngle + Math.PI, 0);
             targetActor.bodyGroup.scale.setScalar(targetPose?.scale ?? 1);
+            updateSilenceMarker(targetActor, targetPose?.silenceTime ?? 0, elapsed);
             updateArchangelMichael(targetActor, targetPose?.archangelTime ?? 0, elapsed);
             updateFallenLucifer(targetActor, targetPose?.demonTime ?? 0, elapsed);
             if (targetPose) applySpellPose(targetActor, targetPose, elapsed);
@@ -1203,6 +1208,7 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
         updateHealingPower(char3D, timeSec);
         updateTimePower(char3D, timeSec, Boolean(spellPose?.shielded));
         updateSpacePower(char3D, timeSec, Boolean(spellPose?.shielded));
+        updateSilenceMarker(char3D, spellPose?.silenceTime ?? 0, timeSec);
         updateArchangelMichael(char3D, spellPose?.archangelTime ?? 0, timeSec);
         updateFallenLucifer(char3D, spellPose?.demonTime ?? 0, timeSec);
         if (spellPose) applySpellPose(char3D, spellPose, timeSec);
@@ -1266,6 +1272,9 @@ export const StickManWorld3D: React.FC<StickManWorld3DProps> = ({
       anchorElements.clear();
       spellSystem.dispose();
       spellActions.dispose();
+      for (const character of map3D.values()) {
+        (character.group.userData.silenceMarker as THREE.Sprite | undefined)?.material.dispose();
+      }
       spellSystemRef.current = null;
       delete previewApi.setCharacterPalettePreview;
       delete previewApi.setSpellPreviewFrame;

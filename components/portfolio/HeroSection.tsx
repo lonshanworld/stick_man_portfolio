@@ -6,6 +6,7 @@ import type { ElementType } from '../../types';
 import { PERSONAL_INFO } from '../../data/portfolioData';
 import { ArcaneSigil } from './ArcaneSigil';
 import { ElementLogo } from './ElementLogo';
+import { HeroName3D } from './HeroName3D';
 import { STICK_MAN_ARCHETYPES } from '../../data/stickManArchetypes';
 
 export function HeroSection({ activeRealm, onSelectRealm }: { activeRealm: ElementType; onSelectRealm: (realm: ElementType) => void }) {
@@ -18,7 +19,10 @@ export function HeroSection({ activeRealm, onSelectRealm }: { activeRealm: Eleme
         <span className="folio-location">Bangkok, Thailand <span> / </span> Open to the world</span>
       </div>
       <div className="folio-masthead">
-        <h1 id="hero-title" tabIndex={-1}>{PERSONAL_INFO.displayName}<span aria-hidden="true"><ElementLogo realm={activeRealm} /></span></h1>
+        <h1 id="hero-title" tabIndex={-1}>
+          <HeroName3D name={PERSONAL_INFO.displayName} />
+          <span className="folio-masthead-symbol" aria-hidden="true"><ElementLogo realm={activeRealm} /></span>
+        </h1>
         <p className="folio-masthead-note">Software engineer<br />Creative developer<br /><span>Personal portfolio / 01</span></p>
       </div>
       <div className="folio-hero-grid">

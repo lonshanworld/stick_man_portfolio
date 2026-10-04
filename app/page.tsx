@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
 import { ElementType } from '../types';
-import { applyThemeVariables } from '../systems/themeEngine';
+import { applyThemeVariables, THEME_STORAGE_KEY, type ThemeMode } from '../systems/themeEngine';
 import { soundEngine } from '../systems/soundEngine';
 import { CURSOR } from '../utils/cursorRef';
 
@@ -24,15 +24,46 @@ const StickManWorld3D = dynamic(
   { ssr: false },
 );
 
+const subscribeTheme = (callback: () => void) => {
+  window.addEventListener('portfolio-theme-change', callback);
+  window.addEventListener('storage', callback);
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+  media.addEventListener('change', callback);
+  return () => {
+    window.removeEventListener('portfolio-theme-change', callback);
+    window.removeEventListener('storage', callback);
+    media.removeEventListener('change', callback);
+  };
+};
+let transientTheme: ThemeMode | undefined;
+const getTheme = (): ThemeMode => {
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === 'light' || saved === 'dark') return saved;
+  } catch {}
+  if (transientTheme) return transientTheme;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
 export default function Home() {
+  const themeMode = useSyncExternalStore<ThemeMode>(subscribeTheme, getTheme, () => 'dark');
   const [activeRealm, setActiveRealm] = useState<ElementType>('fire');
+  const [hasSelectedRealm, setHasSelectedRealm] = useState(false);
   const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(true);
   const [effectsReady, setEffectsReady] = useState(false);
 
   // Apply dynamic theme variables on realm change
   useEffect(() => {
-    applyThemeVariables(activeRealm);
-  }, [activeRealm]);
+    applyThemeVariables(activeRealm, themeMode, hasSelectedRealm);
+  }, [activeRealm, themeMode, hasSelectedRealm]);
+
+  const handleToggleTheme = useCallback(() => {
+    const next = themeMode === 'dark' ? 'light' : 'dark';
+    transientTheme = next;
+    try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch {}
+    applyThemeVariables(activeRealm, next, hasSelectedRealm);
+    window.dispatchEvent(new Event('portfolio-theme-change'));
+  }, [activeRealm, themeMode, hasSelectedRealm]);
 
   // Prioritize useful portfolio content, then load the visual world during idle time.
   useEffect(() => {
@@ -68,6 +99,7 @@ export default function Home() {
   }, []);
 
   const handleSelectRealm = useCallback((realm: ElementType) => {
+    setHasSelectedRealm(true);
     setActiveRealm(realm);
     soundEngine.playElementalWhoosh(realm);
   }, []);
@@ -106,6 +138,8 @@ export default function Home() {
       <NavBar
         activeRealm={activeRealm}
         isSoundEnabled={isSoundEnabled}
+        themeMode={themeMode}
+        onToggleTheme={handleToggleTheme}
         onToggleSound={handleToggleSound}
       />
 

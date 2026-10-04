@@ -10,7 +10,7 @@ type VoidPreviewWindow = Window & {
   getSpellPreviewState: () => { target?: { silenced: boolean; x: number; y: number; startX: number; startY: number } };
 };
 
-test('Void owns three distinct aperture designs and keeps its breach open through the climax', () => {
+test('Void owns three distinct designs and keeps its breach open through the climax', () => {
   const designs = new Set<string>();
   for (const spell of ELEMENTAL_SPELLS.void) {
     const effect = SPELL_BUILDERS[spell.id](spell, 0, 190);
@@ -22,6 +22,17 @@ test('Void owns three distinct aperture designs and keeps its breach open throug
     expect(surfaces.length).toBeGreaterThan(0);
     effect.update(0, spell.duration * .5, spell.duration);
     expect(surfaces.every(surface => surface.material.uniforms.uOpacity.value > .9)).toBe(true);
+    if (spell.id === 'void-null-obelisk') {
+      const monument = effect.root.getObjectByName('null-obelisk')!;
+      expect(monument).toBeDefined();
+      expect(surfaces).toHaveLength(2);
+      expect(monument.scale.y).toBe(1);
+      effect.update(0, 0, spell.duration);
+      expect(monument.scale.y).toBe(0);
+      effect.update(0, spell.duration, spell.duration);
+      expect(monument.scale.y).toBe(0);
+      expect(surfaces.every(surface => surface.material.uniforms.uOpacity.value === 0)).toBe(true);
+    }
     if (spell.id === 'void-catastrophic-collapse') {
       expect(surfaces[0].material.uniforms.uOpen.value).toBe(1);
       effect.update(0, spell.duration * .9, spell.duration);
@@ -39,7 +50,7 @@ test('Void owns three distinct aperture designs and keeps its breach open throug
     materials.forEach(material => { const map = (material as THREE.MeshBasicMaterial).map; if (map) textures.add(map); material.dispose(); });
     geometry.forEach(item => item.dispose()); textures.forEach(item => item.dispose());
   }
-  expect(designs).toEqual(new Set(['gravitational-horizon', 'shearing-fractures', 'sutured-breach']));
+  expect(designs).toEqual(new Set(['silence-obelisk', 'shearing-fractures', 'sutured-breach']));
 });
 
 test('all three Void spells render through their phases, retain their powers, and clean up', async ({ page }, testInfo) => {
@@ -59,7 +70,11 @@ test('all three Void spells render through their phases, retain their powers, an
         { id: spell.id, elapsed: spell.duration * progress })).toBe(true);
       if (progress === .5) {
         const state = await page.evaluate(() => (window as unknown as VoidPreviewWindow).getSpellPreviewState());
-        if (spell.id === 'void-singularity-event') expect(state.target?.silenced).toBe(true);
+        if (spell.id === 'void-null-obelisk') {
+          expect(state.target?.silenced).toBe(true);
+          expect(state.target!.x).toBeCloseTo(state.target!.startX, 5);
+          expect(state.target!.y).toBeCloseTo(state.target!.startY, 5);
+        }
         if (spell.id === 'void-catastrophic-collapse') {
           expect(state.target).toBeDefined();
           expect(Math.hypot(state.target!.x - state.target!.startX, state.target!.y - state.target!.startY)).toBeGreaterThan(.05);
