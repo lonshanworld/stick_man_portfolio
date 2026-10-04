@@ -206,12 +206,20 @@ body { background: var(--folio-bg); color: var(--folio-text); }
 .folio-contact-heading > svg { color: var(--folio-accent); }
 .folio-contact-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 42px; }
 .folio-contact-row p { color: var(--folio-muted); font-size: 14px; }
+.folio-contact-main { min-width: 0; flex: 1; }
+.folio-contact-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; margin-top: 22px; }
+.folio-contact-item { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; gap: 9px; min-width: 0; }
+.folio-contact-label { color: var(--folio-muted); font: 10px var(--font-geist-mono), monospace; letter-spacing: .08em; text-transform: uppercase; }
+.folio-contact-link { min-width: 0; color: var(--folio-text); font-size: 13px; overflow-wrap: anywhere; }
+.folio-contact-link:hover { color: var(--folio-accent); }
+.folio-contact-item .folio-email { margin: 0; padding: 0; border: 0; font: inherit; font-size: 13px; }
 .folio-email { display: inline-block; margin-top: 15px; font: clamp(19px, 2.5vw, 31px) Georgia, serif; border-bottom: 1px solid color-mix(in srgb, var(--folio-accent) 45%, var(--folio-line)); padding-bottom: 7px; }
 .folio-email:hover { color: var(--folio-accent); }
-.folio-copy { display: inline-grid; place-items: center; padding: 12px; margin-left: 6px; vertical-align: middle; color: var(--folio-muted); }
+.folio-copy { display: inline-grid; place-items: center; padding: 8px; color: var(--folio-muted); border: 1px solid var(--folio-line); }
+.folio-copy:hover { color: var(--folio-accent); border-color: var(--folio-accent); }
 .folio-copy-status { min-height: 22px; padding-top: 6px; }
-.folio-socials { display: flex; gap: 26px; }
-.folio-socials a { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.folio-socials { display: flex; flex-direction: column; gap: 12px; min-width: 275px; }
+.folio-socials a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--folio-line); font-size: 13px; }
 .folio-socials a:hover { color: var(--folio-accent); }
 .folio-footer { display: flex; align-items: center; justify-content: space-between; gap: 22px; padding-block: 32px; margin-top: 80px; border-top: 1px solid var(--folio-line); color: var(--folio-muted); font-size: 11px; }
 .folio-footer a:first-child { color: var(--folio-text); font-size: 14px; }
@@ -297,6 +305,8 @@ body { background: var(--folio-bg); color: var(--folio-text); }
   .folio-contact-heading > svg { width: 42px; flex-shrink: 0; }
   .folio-contact h2 { font-size: clamp(40px, 8.5vw, 68px); }
   .folio-contact-row { align-items: flex-start; flex-direction: column; gap: 25px; margin-top: 30px; }
+  .folio-contact-list { grid-template-columns: 1fr; gap: 13px; }
+  .folio-socials { width: 100%; min-width: 0; }
   .folio-footer { flex-wrap: wrap; gap: 18px; margin-top: 38px; }
   .folio-footer > span { order: 3; width: 100%; margin: 0; }
   .folio-footer > a:last-child { margin-left: auto; }
