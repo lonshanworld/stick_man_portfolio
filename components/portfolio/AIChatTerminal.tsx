@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ArrowUpRight, Send } from 'lucide-react';
 import { SectionHeading } from './SectionHeading';
 import { ElementType } from '../../types';
-import { EXPERIENCES, PROJECTS } from '../../data/portfolioData';
+import { EDUCATION, EXPERIENCES, LANGUAGES, PERSONAL_INFO, PROJECTS } from '../../data/portfolioData';
 import { soundEngine } from '../../systems/soundEngine';
 
 interface AIChatTerminalProps {
@@ -46,6 +46,20 @@ export const AIChatTerminal: React.FC<AIChatTerminalProps> = ({
   const generateAnswer = (query: string): string => {
     const q = query.toLowerCase();
 
+    const project = PROJECTS.find((item) =>
+      q.includes(item.title.split(' \u2014 ')[0].toLowerCase()),
+    );
+    if (project) return `${project.title}: ${project.description} ${project.highlights.join(' ')}`;
+
+    if (q.includes('education') || q.includes('university') || q.includes('degree')) {
+      const education = EDUCATION[0];
+      return `${education.degree}, ${education.institution} (${education.period}).`;
+    }
+
+    if (q.includes('language')) {
+      return LANGUAGES.map((language) => `${language.name}: ${language.proficiency}`).join(' / ');
+    }
+
     if (
       q.includes('magic') ||
       q.includes('stick') ||
@@ -63,7 +77,7 @@ export const AIChatTerminal: React.FC<AIChatTerminalProps> = ({
       q.includes('job')
     ) {
       const exp = EXPERIENCES[0];
-      return `At ${exp.company} (${exp.period}), Lon Shan worked as a ${exp.role}, designing scalable microservices with NestJS, deploying PostgreSQL databases, and engineering cross-platform apps with Next.js and Flutter!`;
+      return `At ${exp.company} (${exp.period}), Lon Shan worked as a ${exp.role}. ${exp.description} ${exp.highlights.join(' ')}`;
     }
 
     if (
@@ -72,15 +86,16 @@ export const AIChatTerminal: React.FC<AIChatTerminalProps> = ({
       q.includes('smthgood') ||
       q.includes('migration')
     ) {
-      return `Lon Shan has 3+ years of deep Flutter expertise! At Smthgood, he spearheaded migrating an existing Flutter mobile app into a Next.js web platform, cutting initial page load times by 45%.`;
+      const exp = EXPERIENCES[1];
+      return `At ${exp.company} (${exp.period}), Lon Shan worked as a ${exp.role}. ${exp.description} ${exp.highlights.join(' ')} At EfficientSoft, he built and published the QuickFood Rider and Merchant Flutter applications.`;
     }
 
     if (q.includes('retail') || q.includes('project') || q.includes('pos')) {
       const p = PROJECTS[0];
-      return `One of Lon Shan's flagship platforms is '${p.title}', featuring offline-first POS synchronization, BLE hardware printer drivers, and sub-millisecond Go Fiber queries.`;
+      return `${p.title}: ${p.description} ${p.highlights.join(' ')}`;
     }
 
-    return `Lon Shan is an experienced full-stack & mobile engineer specializing in Next.js, Flutter, TypeScript, NestJS, and interactive 3D WebGL experiences. Feel free to connect via LinkedIn or email!`;
+    return `${PERSONAL_INFO.summary} Feel free to connect via LinkedIn or email!`;
   };
 
   const handleSend = (userText: string) => {

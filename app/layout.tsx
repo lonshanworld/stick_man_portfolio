@@ -5,9 +5,9 @@ import './portfolio.css';
 import './identity.css';
 
 const SITE_URL = 'https://lonshan.com';
-const SITE_TITLE = 'Lon Shan | Full-Stack & Creative Software Engineer';
+const SITE_TITLE = 'Lon Shan | Full-Stack Developer';
 const SITE_DESCRIPTION =
-  'Lon Shan is a Bangkok-based full-stack and mobile software engineer building high-performance Next.js, Flutter, AI, and 3D WebGL products.';
+  'Lon Shan is a Bangkok-based full-stack developer with 3+ years of experience building and maintaining production web and mobile applications.';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'Lon Shan — Full-Stack and Creative Software Engineer',
+        alt: 'Lon Shan — Full-Stack Developer',
       },
     ],
   },
@@ -111,7 +111,7 @@ const jsonLd = {
       '@id': `${SITE_URL}/#person`,
       name: 'Lon Shan',
       url: SITE_URL,
-      jobTitle: 'Full-Stack & Creative Software Engineer',
+      jobTitle: 'Full-Stack Developer',
       description: SITE_DESCRIPTION,
       email: 'mailto:lonshan3010@gmail.com',
       image: `${SITE_URL}/opengraph-image`,
@@ -160,7 +160,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scroll-smooth`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var t;try{t=localStorage.getItem('portfolio-theme')}catch(e){}if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;})()` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var t;try{t=localStorage.getItem('portfolio-theme')}catch(e){}if(t!=='light'&&t!=='dark')t='dark';document.documentElement.dataset.theme=t;})()` }} />
       </head>
       <body className="min-h-full flex flex-col">
         <script

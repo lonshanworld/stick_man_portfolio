@@ -6,11 +6,9 @@ type PreviewWindow = Window & {
   setCharacterPalettePreview: (lighting: 'world') => { element: string }[];
 };
 
-test('theme switch follows system preference, persists, and keeps realm selection independent', async ({ page }) => {
+test('theme defaults to dark, persists, and keeps realm selection independent', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.getByRole('button', { name: 'Switch to dark theme' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.reload();
   await expect(page.getByRole('button', { name: 'Switch to light theme' })).toBeVisible();

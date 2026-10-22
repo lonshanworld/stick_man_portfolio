@@ -27,12 +27,9 @@ const StickManWorld3D = dynamic(
 const subscribeTheme = (callback: () => void) => {
   window.addEventListener('portfolio-theme-change', callback);
   window.addEventListener('storage', callback);
-  const media = window.matchMedia('(prefers-color-scheme: dark)');
-  media.addEventListener('change', callback);
   return () => {
     window.removeEventListener('portfolio-theme-change', callback);
     window.removeEventListener('storage', callback);
-    media.removeEventListener('change', callback);
   };
 };
 let transientTheme: ThemeMode | undefined;
@@ -42,7 +39,7 @@ const getTheme = (): ThemeMode => {
     if (saved === 'light' || saved === 'dark') return saved;
   } catch {}
   if (transientTheme) return transientTheme;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'dark';
 };
 
 export default function Home() {

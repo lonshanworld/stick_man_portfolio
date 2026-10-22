@@ -1,5 +1,5 @@
 import type { ElementType } from '../../types';
-import { EXPERIENCES } from '../../data/portfolioData';
+import { EDUCATION, EXPERIENCES, LANGUAGES } from '../../data/portfolioData';
 import { SectionHeading } from './SectionHeading';
 
 export function ExperienceSection({
@@ -51,6 +51,29 @@ export function ExperienceSection({
             </div>
           </article>
         ))}
+        {EDUCATION.map((education) => (
+          <article className="folio-experience" key={education.institution}>
+            <div className="folio-experience-date">
+              <span className="folio-eyebrow">Education</span>
+              <p>{education.period}</p>
+            </div>
+            <div>
+              <h3>{education.degree}</h3>
+              <p className="folio-company">{education.institution}</p>
+            </div>
+          </article>
+        ))}
+        <article className="folio-experience">
+          <div className="folio-experience-date">
+            <span className="folio-eyebrow">Languages</span>
+          </div>
+          <div>
+            <h3>Languages</h3>
+            <p className="folio-description">
+              {LANGUAGES.map((language) => `${language.name}: ${language.proficiency}`).join(' / ')}
+            </p>
+          </div>
+        </article>
       </div>
     </section>
   );

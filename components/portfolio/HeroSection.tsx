@@ -23,13 +23,13 @@ export function HeroSection({ activeRealm, onSelectRealm }: { activeRealm: Eleme
           <HeroName3D name={PERSONAL_INFO.displayName} />
           <span className="folio-masthead-symbol" aria-hidden="true"><ElementLogo realm={activeRealm} /></span>
         </h1>
-        <p className="folio-masthead-note">Software engineer<br />Creative developer<br /><span>Personal portfolio / 01</span></p>
+        <p className="folio-masthead-note">{PERSONAL_INFO.title}<br />Web &amp; mobile applications<br /><span>Personal portfolio / 01</span></p>
       </div>
       <div className="folio-hero-grid">
         <div className="folio-hero-copy">
           <p className="folio-hero-kicker"><span>01 / THE WAY I BUILD</span><span aria-hidden="true">↳</span></p>
           <h2 className="folio-hero-statement">Creative by instinct.<br /><em>Steady by design.</em></h2>
-          <p className="folio-hero-description">I’m Lon Shan. I build web, mobile, and the systems behind them. I like giving ambitious ideas a solid foundation — and leaving a little room for the unexpected.</p>
+          <p className="folio-hero-description">{PERSONAL_INFO.summary}</p>
           <div className="folio-hero-links">
             <a className="folio-button" href="#projects">Explore the work <ArrowDown size={16} /></a>
             <a className="folio-text-link" href="#contact">Start a conversation <ArrowUpRight size={16} /></a>

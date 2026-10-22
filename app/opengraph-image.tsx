@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'Lon Shan — Full-Stack and Creative Software Engineer';
+export const alt = 'Lon Shan — Full-Stack Developer';
 export const size = {
   width: 1200,
   height: 630,

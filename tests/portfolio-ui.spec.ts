@@ -61,25 +61,25 @@ test('the full portfolio stays usable with 28 characters and no background parti
       page.getByRole('button', { name: 'Open navigation' }),
     ).toHaveAttribute('aria-expanded', 'false');
 
-  await expect(page.locator('.folio-project')).toHaveCount(6);
-  await expect(page.locator('.project-study')).toHaveCount(6);
+  await expect(page.locator('.folio-project')).toHaveCount(5);
+  await expect(page.locator('.project-study')).toHaveCount(5);
   await page.getByRole('button', { name: 'Creative Dev', exact: true }).click();
   await expect(page.locator('.folio-project')).toHaveCount(1);
   await expect(page.locator('.folio-project h3')).toHaveText(
-    'Elemental Stick Man Realm 3D',
+    'Interactive 3D Stickman World',
   );
   await page.getByRole('button', { name: 'All', exact: true }).click();
-  await expect(page.locator('.folio-project')).toHaveCount(6);
+  await expect(page.locator('.folio-project')).toHaveCount(5);
 
   const notes = page.locator('.folio-project details').first();
   await notes.locator('summary').click();
   await expect(notes).toHaveAttribute('open', '');
-  await expect(notes).toContainText('offline transaction queue');
+  await expect(notes).toContainText('broader reconciliation remains partial');
   await notes.locator('summary').click();
   const experience = page.locator('.folio-experience details').first();
   await experience.locator('summary').click();
-  await expect(experience).toContainText('35%');
-  await expect(page.locator('.folio-skill-group li')).toHaveCount(15);
+  await expect(experience).toContainText('AI-powered chat and automation');
+  await expect(page.locator('.folio-skill-group li')).toHaveCount(16);
 
   await page.getByRole('button', { name: 'Smart Retail Project' }).click();
   await expect(page.locator('.folio-message.ai').last()).toContainText(
